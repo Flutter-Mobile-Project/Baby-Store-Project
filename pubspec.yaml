@@ -57,6 +57,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - assets/images/product/
     - assets/icons/
     - assets/mock/
 

@@ -1,55 +1,140 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import 'widgets/home_widgets.dart';
+import 'widgets/category_grid.dart';
+import 'widgets/new_arrivals.dart';
+import 'widgets/homeSidebar.dart';
 
-import 'home_widgets.dart';
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  //  This variable remembers which tab is currently active
+  int _selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    // Scaffold provides the basic structural layout for a screen
     return Scaffold(
-      // SafeArea prevents your UI from overlapping with the phone's status bar or notch
+      drawer: const HomeDrawer(),
+      appBar: AppBar(
+        backgroundColor: AppColors.cream,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'TinyTots',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.textPrimary),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Badge(
+              label: const Text('2'),
+              backgroundColor: Colors.redAccent,
+              child: const Icon(
+                Icons.shopping_cart_outlined,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16.0),
-          children: const [TopBanner()],
+          children: const [
+            SizedBox(height: 20),
+            TopBanner(),
+            SizedBox(height: 24),
+            AgeFilter(),
+            SizedBox(height: 24),
+            FlashSaleStrip(),
+            SizedBox(height: 24),
+            CategoryGrid(),
+            SizedBox(height: 24),
+            NewArrivals(),
+          ],
         ),
-
-        // child: Center(
-        //   child: Text(
-        //     'Baby Store Home',
-        //     style: TextStyle(
-        //       fontSize: 24,
-        //       fontFamily: 'Poppins',
-        //       fontWeight: FontWeight.bold,
-        //       color: AppColors.textPrimary,
-        //     ),
-        //   ),
-        // ),
       ),
-      // A standard bottom navigation bar to match your Figma's footer
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: AppColors.textPrimary,
-        unselectedItemColor: AppColors.textSecondary,
-        backgroundColor: AppColors.cream,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_outlined),
-            label: 'Shop',
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(40),
+          topRight: Radius.circular(40),
+        ),
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            indicatorColor: AppColors.babyBlue,
+            labelTextStyle: WidgetStateProperty.all(
+              const TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_giftcard),
-            label: 'Registry',
+          child: NavigationBar(
+            backgroundColor: AppColors.beige,
+            height: 80,
+            elevation: 0,
+
+            selectedIndex: _selectedIndex,
+
+            onDestinationSelected: (int index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+
+            destinations: const [
+              NavigationDestination(
+                selectedIcon: Icon(Icons.home, color: AppColors.textPrimary),
+                icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                selectedIcon: Icon(
+                  Icons.storefront,
+                  color: AppColors.textPrimary,
+                ),
+                icon: Icon(
+                  Icons.storefront_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                label: 'Shop',
+              ),
+              NavigationDestination(
+                selectedIcon: Icon(
+                  Icons.card_giftcard,
+                  color: AppColors.textPrimary,
+                ),
+                icon: Icon(Icons.card_giftcard, color: AppColors.textSecondary),
+                label: 'Registry',
+              ),
+              NavigationDestination(
+                selectedIcon: Icon(Icons.person, color: AppColors.textPrimary),
+                icon: Icon(
+                  Icons.person_outline,
+                  color: AppColors.textSecondary,
+                ),
+                label: 'Profile',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }

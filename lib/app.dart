@@ -9,9 +9,9 @@ class BabyStoreApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Baby Store',
-      debugShowCheckedModeBanner: false, // Removes the red "DEBUG" banner
-      theme: AppTheme.lightTheme,        // Applies the rounded corners and colors we set up!
-      home: const HomeScreen(),          // Sets the first screen the user sees
+      debugShowCheckedModeBanner: false, 
+      theme: AppTheme.lightTheme,       
+      home: const HomeScreen(),         
     );
   }
 }
