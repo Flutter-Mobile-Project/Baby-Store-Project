@@ -8,16 +8,13 @@ class HomeDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
-      // We use a Column so we can precisely control the layout
       child: SafeArea(
         child: Column(
           children: [
-            // --- 1. THE HEADER ---
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Row(
                 children: [
-                  // The light blue circle with the user icon
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.babyBlue,
@@ -27,8 +24,6 @@ class HomeDrawer extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  
-                  // The User Text
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -56,25 +51,45 @@ class HomeDrawer extends StatelessWidget {
               ),
             ),
 
-            // The subtle dividing line
-            const Divider(color: Color(0xFFEEEEEE), height: 1, thickness: 1),
-            
+            const Divider(color: Color(0xFFEEEEEE), height: 1),
             const SizedBox(height: 16),
 
-            // --- 2. THE MENU ITEMS ---
-            _buildDrawerItem(Icons.location_on_outlined, 'Nearby Stores'),
-            _buildDrawerItem(Icons.local_offer_outlined, 'Coupons'),
-            _buildDrawerItem(Icons.calendar_today_outlined, 'Service Booking'),
-            _buildDrawerItem(Icons.support_agent_outlined, 'Support Chat'),
+            _buildDrawerItem(
+              context,
+              Icons.location_on_outlined,
+              'Nearby Stores',
+              '/nearby',
+            ),
+            _buildDrawerItem(
+              context,
+              Icons.local_offer_outlined,
+              'Coupons',
+              '/promotions',
+            ),
+            _buildDrawerItem(
+              context,
+              Icons.calendar_today_outlined,
+              'Service Booking',
+              '/booking',
+            ),
+            _buildDrawerItem(
+              context,
+              Icons.support_agent_outlined,
+              'Support Chat',
+              '/chat',
+            ),
           ],
         ),
       ),
     );
   }
 
-  // --- HELPER METHOD ---
-  // Makes creating the list items fast and identical
-  Widget _buildDrawerItem(IconData icon, String title) {
+  Widget _buildDrawerItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String route,
+  ) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textSecondary),
       title: Text(
@@ -86,8 +101,10 @@ class HomeDrawer extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      // This is where you would add navigation logic later
-      onTap: () {}, 
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, route);
+      },
     );
   }
 }
