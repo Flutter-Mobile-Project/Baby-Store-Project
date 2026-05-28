@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../cart/cart_screen.dart';
+import '../auth/register_screen.dart';
+import '../../services/auth_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
-  // Optional: A callback to notify the Home layout to update its heart icons instantly
+
   final VoidCallback? onFavoritesUpdated;
 
   const FavoritesScreen({
@@ -19,9 +22,11 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   int _selectedIndex = 2;
 
+  // ================= STORE ALL CART ITEMS =================
+  List<Map<String, dynamic>> cartItems = [];
+
   @override
   Widget build(BuildContext context) {
-    // Directly use widget.favoriteItems to keep state perfectly synchronized
     final favorites = widget.favoriteItems;
 
     return Scaffold(
@@ -69,7 +74,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   '${favorites.length} ${favorites.length == 1 ? "item" : "items"} waiting for their forever home',
                   style: const TextStyle(
@@ -78,10 +85,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
-                // Using .map() directly over the shared live reference list
-                ...favorites.map((item) => _buildFavoriteCard(item)).toList(),
+                ...favorites
+                    .map((item) => _buildFavoriteCard(context, item))
+                    .toList(),
               ],
             ),
 
@@ -113,7 +122,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 _selectedIndex = index;
               });
 
-              // Smoothly return back to the main screen layout context
               if (index == 0) {
                 Navigator.pop(context);
               }
@@ -124,6 +132,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
                 label: 'Home',
               ),
+
               NavigationDestination(
                 selectedIcon: Icon(
                   Icons.storefront,
@@ -135,6 +144,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
                 label: 'Shop',
               ),
+
               NavigationDestination(
                 selectedIcon: Icon(Icons.favorite, color: Colors.redAccent),
                 icon: Icon(
@@ -143,6 +153,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
                 label: 'Favorites',
               ),
+
               NavigationDestination(
                 selectedIcon: Icon(Icons.person, color: AppColors.textPrimary),
                 icon: Icon(
@@ -159,7 +170,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   // ================= FAVORITE CARD =================
-  Widget _buildFavoriteCard(Map<String, String> item) {
+  Widget _buildFavoriteCard(BuildContext context, Map<String, String> item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(12),
@@ -167,9 +178,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ================= IMAGE =================
           Stack(
             children: [
               ClipRRect(
@@ -181,26 +194,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   fit: BoxFit.cover,
                 ),
               ),
+
+              // ================= DELETE BUTTON =================
               Positioned(
                 top: 10,
                 right: 10,
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      // Remove item straight out of the shared array pointer reference
                       widget.favoriteItems.remove(item);
                     });
-                    // Call update hook to refresh home display state heart shapes
+
                     if (widget.onFavoritesUpdated != null) {
                       widget.onFavoritesUpdated!();
                     }
                   },
+
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
+
                     child: const Icon(
                       Icons.delete_outline,
                       color: Colors.redAccent,
@@ -211,7 +227,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
+          // ================= TITLE + PRICE =================
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -226,6 +245,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   ),
                 ),
               ),
+
               Text(
                 item['price']!,
                 style: const TextStyle(
@@ -236,7 +256,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
             ],
           ),
+
           const SizedBox(height: 6),
+
+          // ================= DESCRIPTION =================
           Text(
             item['description'] ?? item['category'] ?? 'Product',
             style: const TextStyle(
@@ -245,10 +268,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               color: AppColors.textSecondary,
             ),
           ),
+
           const SizedBox(height: 14),
+
+          // ================= MOVE TO CART BUTTON =================
           SizedBox(
             width: double.infinity,
             height: 45,
+
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5B6B7A),
@@ -256,18 +283,119 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              onPressed: () {},
+
+              onPressed: () async {
+                // ================= CONVERT PRICE =================
+                double productPrice = double.parse(
+                  item['price']!.replaceAll('\$', '').trim(),
+                );
+
+                // ================= CREATE CART ITEM =================
+                final cartItem = {
+                  "title": item["title"],
+                  "description": item["description"],
+                  "category": item["category"],
+                  "image": item["image"],
+                  "price": productPrice,
+                  "qty": 1,
+                };
+
+                // ================= CHECK EXISTING PRODUCT =================
+                final existingIndex = cartItems.indexWhere(
+                  (cartProduct) => cartProduct["title"] == cartItem["title"],
+                );
+
+                if (existingIndex != -1) {
+                  setState(() {
+                    cartItems[existingIndex]["qty"]++;
+                  });
+                } else {
+                  setState(() {
+                    cartItems.add(cartItem);
+                  });
+                }
+
+                // ================= REGISTER ONLY FIRST TIME =================
+                if (AuthService.isRegistered) {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          RegisterScreen(cartItems: cartItems),
+                    ),
+                  );
+
+                  if (result == true) {
+                    AuthService.isRegistered = true;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CartScreen(cartItems: cartItems),
+                      ),
+                    );
+                  }
+                } else {
+                  // ================= ALREADY REGISTERED =================
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CartScreen(cartItems: cartItems),
+                    ),
+                  );
+                }
+              },
+
               icon: const Icon(
                 Icons.shopping_bag_outlined,
                 color: Colors.white,
                 size: 18,
               ),
+
               label: const Text(
                 'Move to Cart',
                 style: TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 14,
                   color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ================= VIEW CART BUTTON =================
+          SizedBox(
+            width: double.infinity,
+            height: 45,
+
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF5B6B7A)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CartScreen(cartItems: cartItems),
+                  ),
+                );
+              },
+
+              icon: const Icon(
+                Icons.shopping_cart_outlined,
+                color: Color(0xFF5B6B7A),
+              ),
+
+              label: const Text(
+                "View Cart",
+                style: TextStyle(
+                  color: Color(0xFF5B6B7A),
                   fontWeight: FontWeight.bold,
                 ),
               ),
