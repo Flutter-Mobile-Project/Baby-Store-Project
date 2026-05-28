@@ -14,4 +14,6 @@ class AppColors {
   static const Color mint = Color(0xFFE0F2FE);
   static const Color mintLight = Color(0xFFE2F3EB);
   static const Color beige = Color(0xFFF2EEDE);
+
+  static const primary = Color(0xFFFFB6C1); // ✅ ADD THIS
 }

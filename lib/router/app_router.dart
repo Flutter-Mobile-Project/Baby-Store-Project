@@ -8,6 +8,7 @@ import '../features/nearby/nearby_screen.dart';
 import '../features/booking/booking_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/map/map_screen.dart';
+import '../features/settings/settings_screen.dart';
 
 // Optional (create later if needed)
 import '../features/promotions/promotions_screen.dart';
@@ -34,6 +35,12 @@ class AppRouter {
       // ✅ Map
       case '/map':
         return MaterialPageRoute(builder: (_) => const MapScreen());
+
+      case '/settings':
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+
+      case '/':
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
 
       // ✅ Promotions (temporary placeholder)
       // case '/promotions':

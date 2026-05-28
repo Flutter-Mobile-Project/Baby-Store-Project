@@ -117,6 +117,11 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() {
                 _selectedIndex = index;
               });
+
+              // ✅ PROFILE TAB
+              if (index == 3) {
+                Navigator.pushNamed(context, '/settings');
+              }
             },
 
             destinations: const [

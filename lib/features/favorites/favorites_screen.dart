@@ -315,18 +315,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   });
                 }
 
-                // ================= REGISTER ONLY FIRST TIME =================
-                if (AuthService.isRegistered) {
+                // ================= REGISTER BEFORE ADD TO CART =================
+                if (!AuthService.isRegistered) {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          RegisterScreen(cartItems: cartItems),
+                      builder: (context) => const RegisterScreen(),
                     ),
                   );
 
+                  // ================= AFTER SUCCESS REGISTER =================
                   if (result == true) {
                     AuthService.isRegistered = true;
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -335,7 +336,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     );
                   }
                 } else {
-                  // ================= ALREADY REGISTERED =================
+                  // ================= USER ALREADY REGISTERED =================
                   Navigator.push(
                     context,
                     MaterialPageRoute(

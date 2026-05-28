@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RegisterScreen extends StatefulWidget {
+import 'package:baby_store_app/state/user_provider.dart';
+import 'package:baby_store_app/models/user.dart';
+
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -22,7 +26,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // return success result to previous screen
+    // ✅ SAVE USER DATA
+    ref.read(userProvider.notifier).state = User(
+      name: nameController.text,
+      membership: 'Platinum Member',
+    );
+
+    // ✅ RETURN to Cart screen
     Navigator.pop(context, true);
   }
 
@@ -74,15 +84,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF556B7B),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
                   onPressed: _register,
-                  child: const Text(
-                    "Register",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: const Text("Register", style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],
