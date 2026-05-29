@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
-import 'package:baby_store_app/features/favorites/favorites_screen.dart';
 
 class NewArrivals extends StatelessWidget {
   final List<Map<String, String>> favoriteItems;
@@ -127,26 +126,13 @@ class NewArrivals extends StatelessWidget {
                 right: 12,
                 child: GestureDetector(
                   onTap: () {
-                    // 1. Toggle favorite
-                    final item = {
+                    // ✅ Just toggle — icon updates, no navigation
+                    onToggleFavorite({
                       'title': title,
                       'category': category,
                       'price': price,
                       'image': imagePath,
                       'description': category,
-                    };
-
-                    onToggleFavorite(item);
-
-                    // 2. Navigate to favorites screen after state updates
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FavoritesScreen(favoriteItems: favoriteItems),
-                        ),
-                      );
                     });
                   },
                   child: Container(

@@ -59,6 +59,7 @@ flutter:
     - assets/images/
     - assets/images/nearby/
     - assets/images/product/
+    - assets/images/profile/
     - assets/icons/
     - assets/mock/
 

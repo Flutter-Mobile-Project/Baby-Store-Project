@@ -1,38 +1,37 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
-import '../cart/cart_screen.dart';
 
 class PromotionsScreen extends StatelessWidget {
   const PromotionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Needs Scaffold because it's pushed as a route from the drawer
     return Scaffold(
       backgroundColor: AppColors.cream,
-
-      // ================= APP BAR =================
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8F3E7),
+        backgroundColor: AppColors.cream,
         elevation: 0,
-        leading: const Icon(Icons.menu, color: Colors.grey),
-        title: const Text(
-          "TinyTots",
-          style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.shopping_cart_outlined, color: Colors.blueGrey),
+        title: const Text(
+          'TinyTots',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
-        ],
+        ),
+        centerTitle: false,
       ),
-
-      // ================= BODY =================
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ===== TOP BUTTONS =====
+            // ── Top buttons ───────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -44,20 +43,19 @@ class PromotionsScreen extends StatelessWidget {
                     ),
                     child: const Center(
                       child: Text(
-                        "My\nCoupons",
+                        "My Coupons",
                         textAlign: TextAlign.center,
                         style: TextStyle(
+                          fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 18,
+                          fontSize: 16,
                           color: Colors.blueGrey,
                         ),
                       ),
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Container(
                     height: 60,
@@ -67,11 +65,12 @@ class PromotionsScreen extends StatelessWidget {
                     ),
                     child: const Center(
                       child: Text(
-                        "Baby\nRegistry",
+                        "Baby Registry",
                         textAlign: TextAlign.center,
                         style: TextStyle(
+                          fontFamily: 'Poppins',
                           fontWeight: FontWeight.w600,
-                          fontSize: 18,
+                          fontSize: 16,
                           color: Colors.black87,
                         ),
                       ),
@@ -83,7 +82,7 @@ class PromotionsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            buildCouponCard(
+            _buildCouponCard(
               context: context,
               title: "Welcome Gift",
               subtitle: "20% off your first nursery furniture order.",
@@ -91,10 +90,8 @@ class PromotionsScreen extends StatelessWidget {
               tag: "Free Shipping",
               icon: Icons.local_offer_outlined,
             ),
-
             const SizedBox(height: 18),
-
-            buildCouponCard(
+            _buildCouponCard(
               context: context,
               title: "Stroller Sale",
               subtitle: "\$50 off any Travel System purchase.",
@@ -102,10 +99,8 @@ class PromotionsScreen extends StatelessWidget {
               tag: "Limited Time",
               icon: Icons.card_giftcard_outlined,
             ),
-
             const SizedBox(height: 18),
-
-            buildCouponCard(
+            _buildCouponCard(
               context: context,
               title: "Bundle Jug",
               subtitle: "Buy 3 outfits, get the 4th for free.",
@@ -113,41 +108,14 @@ class PromotionsScreen extends StatelessWidget {
               tag: "Free Shipping",
               icon: Icons.auto_awesome_outlined,
             ),
+            const SizedBox(height: 30),
           ],
         ),
-      ),
-
-      // ================= FOOTER =================
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        backgroundColor: const Color(0xFFF8F3E7),
-        selectedItemColor: Colors.blueGrey,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.storefront_outlined),
-            label: "Shop",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_giftcard),
-            label: "Registry",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: "Profile",
-          ),
-        ],
       ),
     );
   }
 
-  // ================= COUPON CARD =================
-  Widget buildCouponCard({
+  Widget _buildCouponCard({
     required BuildContext context,
     required String title,
     required String subtitle,
@@ -165,7 +133,7 @@ class PromotionsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TOP ROW
+          // ── Tag + icon ───────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -181,6 +149,7 @@ class PromotionsScreen extends StatelessWidget {
                 child: Text(
                   tag,
                   style: const TextStyle(
+                    fontFamily: 'Nunito',
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey,
@@ -196,6 +165,7 @@ class PromotionsScreen extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
+              fontFamily: 'Poppins',
               fontSize: 28,
               fontWeight: FontWeight.w500,
               color: Colors.blueGrey,
@@ -206,46 +176,56 @@ class PromotionsScreen extends StatelessWidget {
 
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 17, color: Colors.black54),
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 15,
+              color: Colors.black54,
+            ),
           ),
 
           const SizedBox(height: 24),
 
-          // BOTTOM ROW
+          // ── Code + apply ─────────────────────────────────────────
+          // ✅ Use Row with Flexible to fix overflow
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1EEE3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  code,
-                  style: const TextStyle(
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1EEE3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    code,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey,
+                    ),
                   ),
                 ),
               ),
-
-              // ================= APPLY BUTTON =================
-              InkWell(
+              const SizedBox(width: 10),
+              // ✅ Apply copies code and shows snackbar
+              GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CartScreen(cartItems: [], couponCode: code),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Coupon "$code" ready — paste it in your cart.',
+                        style: const TextStyle(fontFamily: 'Nunito'),
+                      ),
+                      backgroundColor: const Color(0xFF556B7B),
+                      behavior: SnackBarBehavior.floating,
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
@@ -258,7 +238,7 @@ class PromotionsScreen extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("Apply"),
+                      Text("Apply", style: TextStyle(fontFamily: 'Nunito')),
                       SizedBox(width: 5),
                       Icon(Icons.arrow_forward, size: 16),
                     ],

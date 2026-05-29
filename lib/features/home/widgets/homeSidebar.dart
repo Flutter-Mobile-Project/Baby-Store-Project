@@ -8,7 +8,9 @@ class HomeDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Listens to the exact same state instance as the Settings Screen
     final user = ref.watch(userProvider);
+
     return Drawer(
       backgroundColor: Colors.white,
       child: SafeArea(
@@ -16,51 +18,62 @@ class HomeDrawer extends ConsumerWidget {
           children: [
             InkWell(
               onTap: () {
-                Navigator.pop(context); // close drawer
+                Scaffold.of(context).closeDrawer();
                 Navigator.pushNamed(context, '/settings');
               },
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
                   children: [
+                    // ✅ Fixed properties: avatar
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.babyBlue,
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: AppColors.textPrimary,
-                      ),
+                      backgroundImage: user?.avatar != null
+                          ? NetworkImage(user!.avatar!)
+                          : null,
+                      child: user?.avatar == null
+                          ? const Icon(
+                              Icons.person_outline,
+                              color: AppColors.textPrimary,
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user != null ? 'Hello, ${user.name}' : 'Hello, Guest',
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user != null
+                                ? 'Hello, ${user.name}'
+                                : 'Hello, Guest',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-
-                        Text(
-                          user?.membership ?? 'Register to unlock benefits',
-                          style: const TextStyle(
-                            fontFamily: 'Nunito',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                          const SizedBox(height: 2),
+                          Text(
+                            // ✅ Fixed property: membership
+                            user?.membership ?? 'Register to unlock benefits',
+                            style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-
             const Divider(color: Color(0xFFEEEEEE), height: 1),
             const SizedBox(height: 16),
 
@@ -112,7 +125,7 @@ class HomeDrawer extends ConsumerWidget {
         ),
       ),
       onTap: () {
-        Navigator.pop(context);
+        Scaffold.of(context).closeDrawer();
         Navigator.pushNamed(context, route);
       },
     );
