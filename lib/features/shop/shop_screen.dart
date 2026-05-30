@@ -1,7 +1,7 @@
 import 'package:baby_store_app/models/product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
-
+import '../detail/product_detail_screen.dart';
 class ShopScreen extends StatelessWidget {
   const ShopScreen({super.key});
 
@@ -87,7 +87,18 @@ class ShopScreen extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final product = products[index];
-                return Container(
+
+                // --- ADDED GESTURE DETECTOR HERE ---
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProductDetailsScreen(),
+                      ),
+                    );
+                  },
+                child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -167,8 +178,10 @@ class ShopScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                     ],
                   ),
+                ),
                 );
               },
+              
             ),
             const SizedBox(height: 20),
           ],
