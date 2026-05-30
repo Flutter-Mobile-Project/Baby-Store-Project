@@ -26,14 +26,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    // ✅ SAVE USER DATA
     ref.read(userProvider.notifier).state = User(
       name: nameController.text,
       membership: 'Platinum Member',
     );
 
-    // ✅ RETURN to Cart screen
-    Navigator.pop(context, true);
+    // ✅ Must use rootNavigator to pop back to favorites correctly
+    Navigator.of(context, rootNavigator: true).pop(true);
   }
 
   @override

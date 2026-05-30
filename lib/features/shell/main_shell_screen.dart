@@ -1,11 +1,29 @@
-import 'package:baby_store_app/features/cart/cart_screen.dart';
+import 'package:baby_store_app/features/home/widgets/homeSidebar.dart';
+import 'package:baby_store_app/features/shop/shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_colors.dart';
 import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../settings/settings_screen.dart';
-import '../home/widgets/homeSidebar.dart';
+import '../nearby/nearby_screen.dart';
+import '../booking/booking_screen.dart';
+import '../chat/chat_screen.dart';
+import '../map/map_screen.dart';
+import '../promotions/promotions_screen.dart';
+import '../cart/cart_screen.dart';
+
+// Tab index constants — easy to reference anywhere
+const int tabHome = 0;
+const int tabShop = 1;
+const int tabFavorites = 2;
+const int tabProfile = 3;
+const int tabCart = 4;
+const int tabNearby = 5;
+const int tabBooking = 6;
+const int tabChat = 7;
+const int tabMap = 8;
+const int tabPromotions = 9;
 
 class MainShellScreen extends ConsumerStatefulWidget {
   const MainShellScreen({super.key});
@@ -15,7 +33,8 @@ class MainShellScreen extends ConsumerStatefulWidget {
 }
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = tabHome;
+
   List<Map<String, String>> _favorites = [];
   List<Map<String, dynamic>> _cartItems = [];
 
@@ -30,28 +49,43 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
+  // ── All pages in one IndexedStack ──────────────────────────────
   List<Widget> get _pages => [
-    HomeBody(favorites: _favorites, onToggleFavorite: _toggleFavorite),
-    const Center(child: Text('Shop — coming soon')),
+    HomeBody(favorites: _favorites, onToggleFavorite: _toggleFavorite), // 0
+    // const Center(child: Text('Shop — coming soon')), // 1
+    const ShopScreen(),
+
     FavoritesScreen(
+      // 2
       favoriteItems: _favorites,
       onFavoritesUpdated: () => setState(() {}),
     ),
-    const SettingsScreen(),
-    // 🎯 FIX 2: Pass down a callback to change index back to 0 (Home) safely
+    const SettingsScreen(), // 3
+    // ✅ Add onNavigate here
     CartScreen(
       cartItems: _cartItems,
-      onBack: () => setState(() => _selectedIndex = 0),
-    ),
+      isTab: true, // ✅ shell tab mode
+
+      onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
+    ), //4
+    const NearbyScreen(), // 5
+    const BookingScreen(), // 6
+    const ChatScreen(), // 7
+    const MapScreen(), // 8
+    const PromotionsScreen(), // 9
   ];
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // ✅ Prevents any accidental pop from emptying the navigator stack
       canPop: false,
       child: Scaffold(
-        drawer: const HomeDrawer(),
+        drawer: HomeDrawer(
+          // Pass a callback so drawer can switch tabs
+          onNavigate: (int tabIndex) {
+            setState(() => _selectedIndex = tabIndex);
+          },
+        ),
         appBar: AppBar(
           backgroundColor: AppColors.cream,
           elevation: 0,
@@ -78,7 +112,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             ),
             IconButton(
               icon: Badge(
-                // 🎯 FIX 1: Look at _cartItems.length, not favorites!
                 label: Text('${_cartItems.length}'),
                 isLabelVisible: _cartItems.isNotEmpty,
                 backgroundColor: Colors.redAccent,
@@ -87,15 +120,15 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              onPressed: () {
-                // Switches the IndexedStack layer to display your CartScreen (index 4)
-                setState(() => _selectedIndex = 4);
-              },
+              // ✅ Cart icon switches to cart tab
+              onPressed: () => setState(() => _selectedIndex = tabCart),
             ),
             const SizedBox(width: 8),
           ],
         ),
+
         body: IndexedStack(index: _selectedIndex, children: _pages),
+
         bottomNavigationBar: ClipRRect(
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(40),
@@ -116,6 +149,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             child: NavigationBar(
               backgroundColor: AppColors.beige,
               height: 80,
+              // ✅ Clamp to 4 visible tabs — hidden tabs (4-9) don't affect indicator
               selectedIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
               onDestinationSelected: (i) => setState(() => _selectedIndex = i),
               destinations: [
@@ -129,8 +163,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                   icon: Icon(Icons.storefront_outlined),
                   label: 'Shop',
                 ),
-
-                // ✅ Favorites with live badge — remove const
                 NavigationDestination(
                   selectedIcon: Badge(
                     label: Text('${_favorites.length}'),
@@ -144,7 +176,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                   ),
                   label: 'Favorites',
                 ),
-
                 const NavigationDestination(
                   selectedIcon: Icon(Icons.person),
                   icon: Icon(Icons.person_outline),

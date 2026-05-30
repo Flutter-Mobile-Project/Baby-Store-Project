@@ -1,14 +1,18 @@
+import 'package:baby_store_app/features/shell/main_shell_screen.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_store_app/state/user_provider.dart';
+// Import tab constants
 
 class HomeDrawer extends ConsumerWidget {
-  const HomeDrawer({super.key});
+  // ✅ Callback to switch tabs in the shell
+  final void Function(int tabIndex)? onNavigate;
+
+  const HomeDrawer({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Listens to the exact same state instance as the Settings Screen
     final user = ref.watch(userProvider);
 
     return Drawer(
@@ -19,13 +23,12 @@ class HomeDrawer extends ConsumerWidget {
             InkWell(
               onTap: () {
                 Scaffold.of(context).closeDrawer();
-                Navigator.pushNamed(context, '/settings');
+                onNavigate?.call(tabProfile); // ← switch to Profile tab
               },
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
                   children: [
-                    // ✅ Fixed properties: avatar
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: AppColors.babyBlue,
@@ -58,7 +61,6 @@ class HomeDrawer extends ConsumerWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            // ✅ Fixed property: membership
                             user?.membership ?? 'Register to unlock benefits',
                             style: const TextStyle(
                               fontFamily: 'Nunito',
@@ -74,6 +76,7 @@ class HomeDrawer extends ConsumerWidget {
                 ),
               ),
             ),
+
             const Divider(color: Color(0xFFEEEEEE), height: 1),
             const SizedBox(height: 16),
 
@@ -81,25 +84,25 @@ class HomeDrawer extends ConsumerWidget {
               context,
               Icons.location_on_outlined,
               'Nearby Stores',
-              '/nearby',
+              tabNearby,
             ),
             _buildDrawerItem(
               context,
               Icons.local_offer_outlined,
               'Coupons',
-              '/promotions',
+              tabPromotions,
             ),
             _buildDrawerItem(
               context,
               Icons.calendar_today_outlined,
               'Service Booking',
-              '/booking',
+              tabBooking,
             ),
             _buildDrawerItem(
               context,
               Icons.support_agent_outlined,
               'Support Chat',
-              '/chat',
+              tabChat,
             ),
           ],
         ),
@@ -110,13 +113,13 @@ class HomeDrawer extends ConsumerWidget {
   Widget _buildDrawerItem(
     BuildContext context,
     IconData icon,
-    String title,
-    String route,
+    String label,
+    int tabIndex,
   ) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textSecondary),
       title: Text(
-        title,
+        label,
         style: const TextStyle(
           fontFamily: 'Nunito',
           fontSize: 14,
@@ -126,7 +129,7 @@ class HomeDrawer extends ConsumerWidget {
       ),
       onTap: () {
         Scaffold.of(context).closeDrawer();
-        Navigator.pushNamed(context, route);
+        onNavigate?.call(tabIndex); // ← switch tab, never push a route
       },
     );
   }

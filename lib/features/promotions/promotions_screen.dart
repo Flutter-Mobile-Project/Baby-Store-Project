@@ -6,111 +6,103 @@ class PromotionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Needs Scaffold because it's pushed as a route from the drawer
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: AppColors.cream,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'TinyTots',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+    // ── No Scaffold, no AppBar — shell owns those ──
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Coupons',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ),
-        ),
-        centerTitle: false,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // ── Top buttons ───────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDCEEFF),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "My Coupons",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.blueGrey,
-                        ),
+          const SizedBox(height: 16),
+
+          // ── Top buttons ─────────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCEEFF),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "My Coupons",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.blueGrey,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Container(
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1EEE3),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "Baby Registry",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Container(
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1EEE3),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "Baby Registry",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-            _buildCouponCard(
-              context: context,
-              title: "Welcome Gift",
-              subtitle: "20% off your first nursery furniture order.",
-              code: "WELCOME20",
-              tag: "Free Shipping",
-              icon: Icons.local_offer_outlined,
-            ),
-            const SizedBox(height: 18),
-            _buildCouponCard(
-              context: context,
-              title: "Stroller Sale",
-              subtitle: "\$50 off any Travel System purchase.",
-              code: "WHEELS50",
-              tag: "Limited Time",
-              icon: Icons.card_giftcard_outlined,
-            ),
-            const SizedBox(height: 18),
-            _buildCouponCard(
-              context: context,
-              title: "Bundle Jug",
-              subtitle: "Buy 3 outfits, get the 4th for free.",
-              code: "B3G1FREE",
-              tag: "Free Shipping",
-              icon: Icons.auto_awesome_outlined,
-            ),
-            const SizedBox(height: 30),
-          ],
-        ),
+          _buildCouponCard(
+            context: context,
+            title: "Welcome Gift",
+            subtitle: "20% off your first nursery furniture order.",
+            code: "WELCOME20",
+            tag: "Free Shipping",
+            icon: Icons.local_offer_outlined,
+          ),
+          const SizedBox(height: 18),
+          _buildCouponCard(
+            context: context,
+            title: "Stroller Sale",
+            subtitle: "\$50 off any Travel System purchase.",
+            code: "WHEELS50",
+            tag: "Limited Time",
+            icon: Icons.card_giftcard_outlined,
+          ),
+          const SizedBox(height: 18),
+          _buildCouponCard(
+            context: context,
+            title: "Bundle Jug",
+            subtitle: "Buy 3 outfits, get the 4th for free.",
+            code: "B3G1FREE",
+            tag: "Free Shipping",
+            icon: Icons.auto_awesome_outlined,
+          ),
+          const SizedBox(height: 30),
+        ],
       ),
     );
   }
@@ -133,7 +125,6 @@ class PromotionsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Tag + icon ───────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -185,8 +176,6 @@ class PromotionsScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // ── Code + apply ─────────────────────────────────────────
-          // ✅ Use Row with Flexible to fix overflow
           Row(
             children: [
               Flexible(
@@ -212,7 +201,6 @@ class PromotionsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              // ✅ Apply copies code and shows snackbar
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(

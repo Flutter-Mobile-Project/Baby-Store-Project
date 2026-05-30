@@ -188,22 +188,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 }
 
                 if (!AuthService.isRegistered) {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  );
+                  // ✅ Use root navigator to push over the shell
+                  final result =
+                      await Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
+                      );
+                  if (!mounted) return;
                   if (result == true) {
                     AuthService.isRegistered = true;
-                    Navigator.push(
-                      context,
+                    Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(
                         builder: (_) => CartScreen(cartItems: cartItems),
                       ),
                     );
                   }
                 } else {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (_) => CartScreen(cartItems: cartItems),
                     ),
