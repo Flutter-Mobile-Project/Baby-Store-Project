@@ -2,6 +2,7 @@ import 'package:baby_store_app/models/product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../detail/product_detail_screen.dart';
+
 class ShopScreen extends StatelessWidget {
   const ShopScreen({super.key});
 
@@ -98,90 +99,89 @@ class ShopScreen extends StatelessWidget {
                       ),
                     );
                   },
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 📸 Image Container with Absolute Positioned Heart Button
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(22),
-                                child: Image.asset(
-                                  product.image, // ✨ Fixed: Uses dot notation
-                                  fit: BoxFit.cover,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 📸 Image Container with Absolute Positioned Heart Button
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(22),
+                                  child: Image.asset(
+                                    product.image, // ✨ Fixed: Uses dot notation
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                height: 36,
-                                width: 36,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white70,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.favorite_border,
-                                  size: 20,
-                                  color: AppColors.textPrimary,
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  height: 36,
+                                  width: 36,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white70,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.favorite_border,
+                                    size: 20,
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
+                        const SizedBox(height: 10),
 
-                      // 📝 Product Information Metadata
-                      Text(
-                        product.brand, // ✨ Fixed: Uses dot notation
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black38,
-                          letterSpacing: 0.5,
+                        // 📝 Product Information Metadata
+                        Text(
+                          product.brand, // ✨ Fixed: Uses dot notation
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black38,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        product.title, // ✨ Fixed: Uses dot notation
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                        const SizedBox(height: 2),
+                        Text(
+                          product.title, // ✨ Fixed: Uses dot notation
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "\$${product.price.toStringAsFixed(2)}", // ✨ Fixed: Uses dot notation
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
+                        const SizedBox(height: 4),
+                        Text(
+                          "\$${product.price.toStringAsFixed(2)}", // ✨ Fixed: Uses dot notation
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
+                        const SizedBox(height: 4),
+                      ],
+                    ),
                   ),
-                ),
                 );
               },
-              
             ),
             const SizedBox(height: 20),
           ],
