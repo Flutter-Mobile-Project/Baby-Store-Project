@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 class PromotionsScreen extends StatelessWidget {
-  const PromotionsScreen({super.key});
+  final Function(String)? onCouponApplied;
+
+  const PromotionsScreen({super.key, this.onCouponApplied});
 
   @override
   Widget build(BuildContext context) {
@@ -178,41 +180,33 @@ class PromotionsScreen extends StatelessWidget {
 
           Row(
             children: [
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1EEE3),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    code,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito',
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey,
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1EEE3),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Text(
+                  code,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+
+              const Spacer(), // Push Apply button to the right
+
               GestureDetector(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Coupon "$code" ready — paste it in your cart.',
-                        style: const TextStyle(fontFamily: 'Nunito'),
-                      ),
-                      backgroundColor: const Color(0xFF556B7B),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  if (onCouponApplied != null) {
+                    onCouponApplied!(code);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -221,7 +215,7 @@ class PromotionsScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE5CFE1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(25),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

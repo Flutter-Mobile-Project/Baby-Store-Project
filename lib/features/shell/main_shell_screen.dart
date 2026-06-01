@@ -12,6 +12,8 @@ import '../chat/chat_screen.dart';
 import '../map/map_screen.dart';
 import '../promotions/promotions_screen.dart';
 import '../cart/cart_screen.dart';
+import 'widgets/app_header.dart';
+import 'widgets/app_footer.dart';
 
 // Tab index constants — easy to reference anywhere
 const int tabHome = 0;
@@ -64,6 +66,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     // ✅ Add onNavigate here
     CartScreen(
       cartItems: _cartItems,
+      favorites: _favorites,
       isTab: true, // ✅ shell tab mode
 
       onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
@@ -86,104 +89,17 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             setState(() => _selectedIndex = tabIndex);
           },
         ),
-        appBar: AppBar(
-          backgroundColor: AppColors.cream,
-          elevation: 0,
-          centerTitle: false,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-          title: const Text(
-            'TinyTots',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search, color: AppColors.textPrimary),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: Badge(
-                label: Text('${_cartItems.length}'),
-                isLabelVisible: _cartItems.isNotEmpty,
-                backgroundColor: Colors.redAccent,
-                child: const Icon(
-                  Icons.shopping_cart_outlined,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              // ✅ Cart icon switches to cart tab
-              onPressed: () => setState(() => _selectedIndex = tabCart),
-            ),
-            const SizedBox(width: 8),
-          ],
+        appBar: AppHeader(
+          cartItemCount: _cartItems.length,
+          onCartPressed: () => setState(() => _selectedIndex = tabCart),
+          onSearchPressed: () {},
+          onMenuPressed: () => Scaffold.of(context).openDrawer(),
         ),
-
         body: IndexedStack(index: _selectedIndex, children: _pages),
-
-        bottomNavigationBar: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          child: NavigationBarTheme(
-            data: NavigationBarThemeData(
-              indicatorColor: AppColors.babyBlue,
-              labelTextStyle: WidgetStateProperty.all(
-                const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            child: NavigationBar(
-              backgroundColor: AppColors.beige,
-              height: 80,
-              // ✅ Clamp to 4 visible tabs — hidden tabs (4-9) don't affect indicator
-              selectedIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
-              onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-              destinations: [
-                const NavigationDestination(
-                  selectedIcon: Icon(Icons.home),
-                  icon: Icon(Icons.home_outlined),
-                  label: 'Home',
-                ),
-                const NavigationDestination(
-                  selectedIcon: Icon(Icons.storefront),
-                  icon: Icon(Icons.storefront_outlined),
-                  label: 'Shop',
-                ),
-                NavigationDestination(
-                  selectedIcon: Badge(
-                    label: Text('${_favorites.length}'),
-                    isLabelVisible: _favorites.isNotEmpty,
-                    child: const Icon(Icons.favorite),
-                  ),
-                  icon: Badge(
-                    label: Text('${_favorites.length}'),
-                    isLabelVisible: _favorites.isNotEmpty,
-                    child: const Icon(Icons.favorite_border),
-                  ),
-                  label: 'Favorites',
-                ),
-                const NavigationDestination(
-                  selectedIcon: Icon(Icons.person),
-                  icon: Icon(Icons.person_outline),
-                  label: 'Profile',
-                ),
-              ],
-            ),
-          ),
+        bottomNavigationBar: AppFooter(
+          selectedIndex: _selectedIndex,
+          favoritesCount: _favorites.length,
+          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
         ),
       ),
     );
