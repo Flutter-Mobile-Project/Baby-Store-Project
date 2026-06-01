@@ -7,11 +7,13 @@ import '../../services/auth_service.dart';
 class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
   final VoidCallback? onFavoritesUpdated;
+  final void Function(List<Map<String, dynamic>>)? onMoveToCart; // ✅ new
 
   const FavoritesScreen({
     super.key,
     required this.favoriteItems,
     this.onFavoritesUpdated,
+    this.onMoveToCart, // ✅ new
   });
 
   @override
@@ -166,50 +168,33 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               onPressed: () async {
-                final productPrice = double.parse(
-                  item['price']!.replaceAll('\$', '').trim(),
-                );
                 final cartItem = {
                   "title": item["title"],
                   "description": item["description"],
                   "category": item["category"],
                   "image": item["image"],
-                  "price": productPrice,
+                  "price": double.parse(
+                    item['price']!.replaceAll('\$', '').trim(),
+                  ),
                   "qty": 1,
                 };
 
-                final existingIndex = cartItems.indexWhere(
-                  (p) => p["title"] == cartItem["title"],
-                );
-                if (existingIndex != -1) {
-                  setState(() => cartItems[existingIndex]["qty"]++);
-                } else {
-                  setState(() => cartItems.add(cartItem));
-                }
-
-                // ================= REGISTER ONLY FIRST TIME =================
                 if (!AuthService.isRegistered) {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RegisterScreen(),
-                    ),
-                  );
-
+                  final result =
+                      await Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
+                      );
+                  if (!mounted) return;
                   if (result == true) {
                     AuthService.isRegistered = true;
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                        builder: (_) => CartScreen(cartItems: cartItems),
-                      ),
-                    );
+                    // ✅ Add to shell cart and switch tab — no push
+                    widget.onMoveToCart?.call([cartItem]);
                   }
                 } else {
-                  Navigator.of(context, rootNavigator: true).push(
-                    MaterialPageRoute(
-                      builder: (_) => CartScreen(cartItems: cartItems),
-                    ),
-                  );
+                  // ✅ Add to shell cart and switch tab — no push
+                  widget.onMoveToCart?.call([cartItem]);
                 }
               },
               icon: const Icon(

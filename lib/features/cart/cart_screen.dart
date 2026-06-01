@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import '../shell/main_shell_screen.dart';
-import '../shell/widgets/app_header.dart';
-import '../shell/widgets/app_footer.dart';
-import '../home/home_screen.dart';
-import '../shop/shop_screen.dart';
-import '../favorites/favorites_screen.dart';
-import '../settings/settings_screen.dart';
-import '../promotions/promotions_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
   final List<Map<String, String>> favorites;
   final String? couponCode;
-  final void Function(int tabIndex)? onNavigate; // ← to switch tabs
-  final bool isTab; // ✅ explicit mode
+  final void Function(int tabIndex)? onNavigate;
+  final bool isTab;
 
   const CartScreen({
     super.key,
@@ -22,7 +15,7 @@ class CartScreen extends StatefulWidget {
     this.favorites = const [],
     this.couponCode,
     this.onNavigate,
-    this.isTab = false, // default: pushed route
+    this.isTab = false,
   });
 
   @override
@@ -31,113 +24,28 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   late List<Map<String, dynamic>> cartItems;
-  late List<Map<String, String>> favorites;
   late TextEditingController _couponController;
   late FocusNode _couponFocusNode;
   String? appliedCoupon;
   double discountAmount = 0.0;
 
-  // Coupon discount mapping
-  static const Map<String, dynamic> couponDiscounts = {
-    'WELCOME20': {'type': 'percentage', 'value': 20}, // 20% off
-    'WHEELS50': {'type': 'fixed', 'value': 50}, // $50 off
-    'B3G1FREE': {'type': 'percentage', 'value': 25}, // Approximate 25% off
+  static const Map<String, dynamic> _coupons = {
+    'WELCOME20': {'type': 'percentage', 'value': 20},
+    'WHEELS50': {'type': 'fixed', 'value': 50},
+    'B3G1FREE': {'type': 'percentage', 'value': 25},
   };
 
-  void _toggleFavorite(Map<String, String> item) {
-    setState(() {
-      final exists = favorites.any((e) => e['title'] == item['title']);
-      if (exists) {
-        favorites.removeWhere((e) => e['title'] == item['title']);
-      } else {
-        favorites.add(item);
-      }
-    });
-  }
+  @override
+  void didUpdateWidget(covariant CartScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-  double _calculateDiscount(String couponCode, double subtotal) {
-    if (!couponDiscounts.containsKey(couponCode)) {
-      return 0.0;
-    }
-
-    final discount = couponDiscounts[couponCode];
-    if (discount['type'] == 'percentage') {
-      return subtotal * (discount['value'] / 100);
-    } else if (discount['type'] == 'fixed') {
-      return discount['value'].toDouble();
-    }
-    return 0.0;
-  }
-
-  void _handleNavigation(int tabIndex) {
-    if (widget.isTab) {
-      // When used as a tab in the shell, use the onNavigate callback
-      widget.onNavigate?.call(tabIndex);
-    } else {
-      // When used as a standalone route, replace with the appropriate screen
-      // Create a NEW StatefulWidget wrapper to avoid disposed state issues
-      switch (tabIndex) {
-        case tabHome:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => _NavigationWrapper(
-                selectedTab: tabHome,
-                favorites: favorites,
-                cartItems: cartItems,
-                onNavigate: _handleNavigation,
-              ),
-            ),
-          );
-          break;
-        case tabShop:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => _NavigationWrapper(
-                selectedTab: tabShop,
-                favorites: favorites,
-                cartItems: cartItems,
-                onNavigate: _handleNavigation,
-              ),
-            ),
-          );
-          break;
-        case tabFavorites:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => _NavigationWrapper(
-                selectedTab: tabFavorites,
-                favorites: favorites,
-                cartItems: cartItems,
-                onNavigate: _handleNavigation,
-              ),
-            ),
-          );
-          break;
-        case tabProfile:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => _NavigationWrapper(
-                selectedTab: tabProfile,
-                favorites: favorites,
-                cartItems: cartItems,
-                onNavigate: _handleNavigation,
-              ),
-            ),
-          );
-          break;
-        case tabPromotions:
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => _NavigationWrapper(
-                selectedTab: tabPromotions,
-                favorites: favorites,
-                cartItems: cartItems,
-                onNavigate: _handleNavigation,
-              ),
-            ),
-          );
-          break;
-      }
+    if (widget.couponCode != oldWidget.couponCode &&
+        widget.couponCode != null &&
+        widget.couponCode!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _couponController.text = widget.couponCode!;
+        _applyCoupon(widget.couponCode!);
+      });
     }
   }
 
@@ -145,27 +53,12 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     cartItems = widget.cartItems;
-    favorites = List.from(widget.favorites); // Make a mutable copy
-    _couponController = TextEditingController();
+    _couponController = TextEditingController(text: widget.couponCode ?? '');
     _couponFocusNode = FocusNode();
 
-    // Auto-fill coupon code if passed from promotions
     if (widget.couponCode != null && widget.couponCode!.isNotEmpty) {
-      _couponController.text = widget.couponCode!;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Auto-apply the coupon
-        String code = widget.couponCode!;
-        double subtotal = 0;
-        for (var item in cartItems) {
-          subtotal += (item["price"] ?? 0) * (item["qty"] ?? 1);
-        }
-        double discount = _calculateDiscount(code, subtotal);
-        if (discount > 0) {
-          setState(() {
-            appliedCoupon = code;
-            discountAmount = discount;
-          });
-        }
+        _applyCoupon(widget.couponCode!);
       });
     }
   }
@@ -177,17 +70,45 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
-  double get subtotal {
-    double total = 0;
-    for (var item in cartItems) {
-      total += (item["price"] ?? 0) * (item["qty"] ?? 1);
+  double get subtotal => cartItems.fold(
+    0,
+    (sum, item) => sum + (item["price"] ?? 0) * (item["qty"] ?? 1),
+  );
+
+  double get total => (subtotal - discountAmount).clamp(0, double.infinity);
+
+  void _applyCoupon(String code) {
+    final coupon = _coupons[code];
+    if (coupon == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid coupon: "$code"'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
-    return total;
+    final discount = coupon['type'] == 'percentage'
+        ? subtotal * (coupon['value'] / 100)
+        : (coupon['value'] as int).toDouble();
+
+    setState(() {
+      appliedCoupon = code;
+      discountAmount = discount;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Coupon "$code" applied! -\$${discount.toStringAsFixed(2)}',
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final Widget body = cartItems.isEmpty
+    final body = cartItems.isEmpty
         ? const Center(
             child: Text(
               "Your cart is empty",
@@ -224,9 +145,9 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 25),
 
-                // ── Cart items ──────────────────────────────────────
-                ...cartItems.map((item) {
-                  return Container(
+                // ── Cart items ──────────────────────────────────
+                ...cartItems.map(
+                  (item) => Container(
                     margin: const EdgeInsets.only(bottom: 18),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -257,7 +178,6 @@ class _CartScreenState extends State<CartScreen> {
                                   fontSize: 15,
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 item["description"] ?? "Product",
                                 style: const TextStyle(
@@ -266,7 +186,6 @@ class _CartScreenState extends State<CartScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 8),
                               Text(
                                 "\$${item["price"]}",
                                 style: const TextStyle(
@@ -279,7 +198,7 @@ class _CartScreenState extends State<CartScreen> {
                             ],
                           ),
                         ),
-                        // ── Qty stepper ─────────────────────────────
+                        // ── Qty stepper ───────────────────────
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -326,12 +245,12 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ],
                     ),
-                  );
-                }),
+                  ),
+                ),
 
                 const SizedBox(height: 10),
 
-                // ── Coupon ──────────────────────────────────────────
+                // ── Coupon ──────────────────────────────────────
                 const Text(
                   "Apply a coupon",
                   style: TextStyle(
@@ -354,16 +273,12 @@ class _CartScreenState extends State<CartScreen> {
                           controller: _couponController,
                           focusNode: _couponFocusNode,
                           decoration: InputDecoration(
-                            hintText: "Enter code (e.g., WELCOME)",
+                            hintText: "Enter code (e.g., WELCOME20)",
                             border: InputBorder.none,
-                            suffixIcon:
-                                appliedCoupon != null && discountAmount > 0
-                                ? Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                    ),
+                            suffixIcon: appliedCoupon != null
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
                                   )
                                 : null,
                           ),
@@ -372,44 +287,9 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
-                      onTap: () {
-                        String code = _couponController.text.trim();
-                        if (code.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter a coupon code'),
-                              backgroundColor: Colors.red,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                          return;
-                        }
-
-                        double discount = _calculateDiscount(code, subtotal);
-                        if (discount > 0) {
-                          setState(() {
-                            appliedCoupon = code;
-                            discountAmount = discount;
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Coupon "$code" applied! Discount: \$${discount.toStringAsFixed(2)}',
-                              ),
-                              backgroundColor: Colors.green,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Invalid coupon code: "$code"'),
-                              backgroundColor: Colors.red,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      },
+                      onTap: () => _applyCoupon(
+                        _couponController.text.trim().toUpperCase(),
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 25,
@@ -430,7 +310,7 @@ class _CartScreenState extends State<CartScreen> {
 
                 const SizedBox(height: 25),
 
-                // ── Offers banner ───────────────────────────────────
+                // ── Offers banner ───────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -464,7 +344,8 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _handleNavigation(tabPromotions),
+                        // ✅ Just switch tab — no _NavigationWrapper needed
+                        onTap: () => widget.onNavigate?.call(tabPromotions),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
@@ -487,7 +368,7 @@ class _CartScreenState extends State<CartScreen> {
 
                 const SizedBox(height: 25),
 
-                // ── Order summary ───────────────────────────────────
+                // ── Order summary ───────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -508,83 +389,52 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Subtotal",
-                            style: TextStyle(fontFamily: 'Nunito'),
-                          ),
-                          Text(
-                            "\$${subtotal.toStringAsFixed(2)}",
-                            style: const TextStyle(fontFamily: 'Nunito'),
-                          ),
-                        ],
+                      _summaryRow(
+                        "Subtotal",
+                        "\$${subtotal.toStringAsFixed(2)}",
                       ),
                       const SizedBox(height: 12),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Shipping",
-                            style: TextStyle(fontFamily: 'Nunito'),
-                          ),
-                          Text(
-                            "Free",
-                            style: TextStyle(
-                              fontFamily: 'Nunito',
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      _summaryRow(
+                        "Shipping",
+                        "Free",
+                        valueStyle: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      if (appliedCoupon != null && discountAmount > 0) ...[
+                      if (appliedCoupon != null) ...[
                         const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Coupon: $appliedCoupon",
-                              style: const TextStyle(
-                                fontFamily: 'Nunito',
-                                color: Colors.green,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              "-\$${discountAmount.toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                fontFamily: 'Nunito',
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        _summaryRow(
+                          "Coupon: $appliedCoupon",
+                          "-\$${discountAmount.toStringAsFixed(2)}",
+                          labelStyle: const TextStyle(
+                            fontFamily: 'Nunito',
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          valueStyle: const TextStyle(
+                            fontFamily: 'Nunito',
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Total",
-                            style: TextStyle(
-                              fontFamily: 'Nunito',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            "\$${(subtotal - discountAmount).toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              fontFamily: 'Nunito',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 22,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
+                      _summaryRow(
+                        "Total",
+                        "\$${total.toStringAsFixed(2)}",
+                        labelStyle: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: AppColors.textPrimary,
+                        ),
+                        valueStyle: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
@@ -592,9 +442,11 @@ class _CartScreenState extends State<CartScreen> {
 
                 const SizedBox(height: 30),
 
-                // ── Checkout ────────────────────────────────────────
+                // ── Checkout ────────────────────────────────────
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    // TODO: navigate to checkout screen
+                  },
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -606,7 +458,7 @@ class _CartScreenState extends State<CartScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             "Checkout",
                             style: TextStyle(
                               fontFamily: 'Nunito',
@@ -615,8 +467,8 @@ class _CartScreenState extends State<CartScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(
+                          SizedBox(width: 8),
+                          Icon(
                             Icons.arrow_forward,
                             color: Colors.white,
                             size: 20,
@@ -631,145 +483,28 @@ class _CartScreenState extends State<CartScreen> {
             ),
           );
 
+    // ✅ Tab mode — shell owns header/footer
     if (widget.isTab) return body;
-    // ✅ Wrap in Scaffold only when pushed as a route
+
+    // ✅ Route mode — needs own Scaffold
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppHeader(
-        cartItemCount: cartItems.length,
-        onCartPressed: () => widget.onNavigate?.call(tabCart),
-        onSearchPressed: () {},
-        onMenuPressed: () => Navigator.of(context).pop(),
-      ),
-      body: body,
-      bottomNavigationBar: AppFooter(
-        selectedIndex: tabCart,
-        favoritesCount: favorites.length,
-        onDestinationSelected: _handleNavigation,
-      ),
+      body: SafeArea(child: body),
     );
   }
 
-  // ✅ As a shell tab — just return content
-  // return body;
-  // }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Separate StatefulWidget wrapper to handle navigation properly and avoid
-// setState() called after dispose() errors
-// ═══════════════════════════════════════════════════════════════════════════
-class _NavigationWrapper extends StatefulWidget {
-  final int selectedTab;
-  final List<Map<String, String>> favorites;
-  final List<Map<String, dynamic>> cartItems;
-  final Function(int) onNavigate;
-
-  const _NavigationWrapper({
-    required this.selectedTab,
-    required this.favorites,
-    required this.cartItems,
-    required this.onNavigate,
-  });
-
-  @override
-  State<_NavigationWrapper> createState() => _NavigationWrapperState();
-}
-
-class _NavigationWrapperState extends State<_NavigationWrapper> {
-  late List<Map<String, String>> favorites;
-  late int currentTab;
-  String? pendingCouponCode;
-
-  @override
-  void initState() {
-    super.initState();
-    favorites = List.from(widget.favorites);
-    currentTab = widget.selectedTab;
-  }
-
-  void _toggleFavorite(Map<String, String> item) {
-    setState(() {
-      final exists = favorites.any((e) => e['title'] == item['title']);
-      if (exists) {
-        favorites.removeWhere((e) => e['title'] == item['title']);
-      } else {
-        favorites.add(item);
-      }
-    });
-  }
-
-  void _handleWrapperNavigation(int tabIndex) {
-    setState(() {
-      currentTab = tabIndex;
-    });
-  }
-
-  void _handleCouponFromPromotion(String couponCode) {
-    setState(() {
-      pendingCouponCode = couponCode;
-      currentTab = tabCart;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    late Widget body;
-
-    switch (currentTab) {
-      case tabHome:
-        body = HomeBody(
-          favorites: favorites,
-          onToggleFavorite: _toggleFavorite,
-        );
-        break;
-      case tabShop:
-        body = const ShopScreen();
-        break;
-      case tabFavorites:
-        body = FavoritesScreen(
-          favoriteItems: favorites,
-          onFavoritesUpdated: () => setState(() {}),
-        );
-        break;
-      case tabProfile:
-        body = const SettingsScreen();
-        break;
-      case tabPromotions:
-        body = PromotionsScreen(onCouponApplied: _handleCouponFromPromotion);
-        break;
-      case tabCart:
-        body = CartScreen(
-          cartItems: widget.cartItems,
-          favorites: favorites,
-          couponCode: pendingCouponCode,
-          isTab: true,
-          onNavigate: (index) => _handleWrapperNavigation(index),
-        );
-        // Clear pending coupon after using it
-        pendingCouponCode = null;
-        break;
-      default:
-        body = HomeBody(
-          favorites: favorites,
-          onToggleFavorite: _toggleFavorite,
-        );
-    }
-
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppHeader(
-        cartItemCount: widget.cartItems.length,
-        onCartPressed: () => _handleWrapperNavigation(tabCart),
-        onSearchPressed: () {},
-        onMenuPressed: () => Navigator.of(context).pop(),
-      ),
-      body: body,
-      bottomNavigationBar: AppFooter(
-        selectedIndex: currentTab,
-        favoritesCount: favorites.length,
-        onDestinationSelected: _handleWrapperNavigation,
-      ),
+  Widget _summaryRow(
+    String label,
+    String value, {
+    TextStyle? labelStyle,
+    TextStyle? valueStyle,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: labelStyle ?? const TextStyle(fontFamily: 'Nunito')),
+        Text(value, style: valueStyle ?? const TextStyle(fontFamily: 'Nunito')),
+      ],
     );
   }
 }
