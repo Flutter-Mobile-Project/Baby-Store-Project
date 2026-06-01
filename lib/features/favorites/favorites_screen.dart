@@ -187,15 +187,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   setState(() => cartItems.add(cartItem));
                 }
 
+                // ================= REGISTER ONLY FIRST TIME =================
                 if (!AuthService.isRegistered) {
-                  // ✅ Use root navigator to push over the shell
-                  final result =
-                      await Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
-                      );
-                  if (!mounted) return;
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegisterScreen(),
+                    ),
+                  );
+
                   if (result == true) {
                     AuthService.isRegistered = true;
                     Navigator.of(context, rootNavigator: true).push(
