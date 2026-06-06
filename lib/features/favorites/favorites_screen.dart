@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../cart/cart_screen.dart';
-import '../auth/register_screen.dart';
-import '../../services/auth_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
@@ -167,35 +165,46 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              onPressed: () async {
+              onPressed: () {
+                final productPrice = double.parse(
+                  item['price']!.replaceAll('\$', '').trim(),
+                );
                 final cartItem = {
                   "title": item["title"],
                   "description": item["description"],
                   "category": item["category"],
                   "image": item["image"],
-                  "price": double.parse(
-                    item['price']!.replaceAll('\$', '').trim(),
-                  ),
+                  "price": productPrice,
                   "qty": 1,
                 };
 
-                if (!AuthService.isRegistered) {
-                  final result =
-                      await Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
+                // ✅ Add to cart — no registration gate
+                widget.onMoveToCart?.call([cartItem]);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.white,
+                          size: 18,
                         ),
-                      );
-                  if (!mounted) return;
-                  if (result == true) {
-                    AuthService.isRegistered = true;
-                    // ✅ Add to shell cart and switch tab — no push
-                    widget.onMoveToCart?.call([cartItem]);
-                  }
-                } else {
-                  // ✅ Add to shell cart and switch tab — no push
-                  widget.onMoveToCart?.call([cartItem]);
-                }
+                        const SizedBox(width: 8),
+                        Text(
+                          '${item['title']} added to cart',
+                          style: const TextStyle(fontFamily: 'Nunito'),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: const Color(0xFF556B7B),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
               },
               icon: const Icon(
                 Icons.shopping_bag_outlined,

@@ -1,17 +1,22 @@
+import 'package:baby_store_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import 'package:baby_store_app/state/user_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+class SettingsScreen extends ConsumerStatefulWidget {
+  final VoidCallback? onLogout;
+
+  const SettingsScreen({super.key, this.onLogout});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Properly watching the state inside the build block scope
-    final user = ref.watch(userProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
-    // True when pushed via Navigator (has a route below it to go back to)
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(userProvider);
     final bool canPop = Navigator.of(context).canPop();
 
     return Scaffold(
@@ -19,21 +24,17 @@ class SettingsScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ─── STACKED PROFILE HEADER ───
+            // ── Profile header ─────────────────────────────────
             Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
-                // Faded Room Background Tint Layer
                 Container(
                   height: 220,
                   width: double.infinity,
-                  // Change this line inside the Stack widget:
                   decoration: const BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage(
-                        'assets/images/profile/image1.png',
-                      ), // 👈 Pass your asset path here
+                      image: AssetImage('assets/images/profile/image1.png'),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -50,8 +51,6 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
-                // Safe Area Back Button Handler
                 if (canPop)
                   Positioned(
                     top: MediaQuery.of(context).padding.top + 10,
@@ -68,8 +67,6 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-
-                // Profile Layout Elements
                 Positioned(
                   top: 60,
                   child: Column(
@@ -95,7 +92,7 @@ class SettingsScreen extends ConsumerWidget {
                                   : const AssetImage(
                                           'assets/images/profile/image2.png',
                                         )
-                                        as ImageProvider, // 👈 Local fallback
+                                        as ImageProvider,
                             ),
                           ),
                           if (user != null)
@@ -118,7 +115,6 @@ class SettingsScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // ✅ Dynamic Model Mapping: user.name
                       Text(
                         user?.name ?? 'Guest User',
                         style: const TextStyle(
@@ -128,7 +124,6 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // Membership Badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -139,7 +134,6 @@ class SettingsScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          // ✅ Dynamic Model Mapping: user.membership
                           user?.membership ?? 'Standard Member',
                           style: const TextStyle(
                             fontSize: 13,
@@ -156,7 +150,7 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
-            // ─── COUNTER STATS ROW ───
+            // ── Stats ───────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -172,13 +166,11 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ─── MAIN CONTENT BODY ───
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Account Essentials Block ---
                   _sectionTitle('Account Essentials'),
                   Container(
                     decoration: BoxDecoration(
@@ -213,7 +205,6 @@ class SettingsScreen extends ConsumerWidget {
 
                   const SizedBox(height: 24),
 
-                  // --- My Little One Block ---
                   _sectionTitle('My Little One'),
                   Container(
                     decoration: BoxDecoration(
@@ -243,18 +234,28 @@ class SettingsScreen extends ConsumerWidget {
 
                   const SizedBox(height: 28),
 
-                  // --- Support Static Options ---
                   _settingsSupportItem(Icons.help_outline, 'Help Center'),
                   _settingsSupportItem(Icons.shield_outlined, 'Privacy Policy'),
 
                   const SizedBox(height: 30),
 
-                  // --- Sign Out Button ---
+                  // ── Sign out ──────────────────────────────────
                   if (user != null)
                     GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        await AuthService.logout();
                         ref.read(userProvider.notifier).state = null;
-                        if (canPop) Navigator.pop(context);
+
+                        if (!mounted) return;
+
+                        if (canPop) {
+                          Navigator.of(
+                            context,
+                          ).popUntil((route) => route.isFirst);
+                        } else {
+                          // ✅ widget.onLogout works in StatefulWidget
+                          widget.onLogout?.call();
+                        }
                       },
                       child: Container(
                         width: double.infinity,
