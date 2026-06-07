@@ -12,7 +12,7 @@ import '../map/map_screen.dart';
 import '../promotions/promotions_screen.dart';
 import '../cart/cart_screen.dart';
 
-// Tab index constants — easy to reference anywhere
+// Tab index constants
 const int tabHome = 0;
 const int tabShop = 1;
 const int tabFavorites = 2;
@@ -56,20 +56,17 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
-  // In _MainShellScreenState — add method:
   void _moveToCart(List<Map<String, dynamic>> items) {
     setState(() {
       for (final item in items) {
-        final existing = _cartItems.indexWhere(
-          (e) => e['title'] == item['title'],
-        );
+        final existing = _cartItems.indexWhere((e) => e['title'] == item['title']);
         if (existing != -1) {
-          _cartItems[existing]['qty']++;
+          _cartItems[existing]['qty'] += item['qty'] ?? 1;
         } else {
           _cartItems.add(Map.from(item));
         }
       }
-      _selectedIndex = tabCart; // ✅ switch to cart tab
+      _selectedIndex = tabCart;
     });
   }
 
@@ -82,72 +79,39 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
+  // ✅ This is the ONLY _pages getter you need
   List<Widget> get _pages => [
-<<<<<<< HEAD
-  HomeBody(
-    favorites: _favorites,
-    onToggleFavorite: _toggleFavorite,
-    onAddToCart: _moveToCart,
-  ), // tabHome (0)
-  ShopScreen(
-    favoriteItems: _favorites, 
-    onToggleFavorite: _toggleFavorite,
-    onAddToCart: _moveToCart,
-  ), // tabShop (1)
-  FavoritesScreen(
-    favoriteItems: _favorites,
-    onFavoritesUpdated: () => setState(() {}),
-    onMoveToCart: _moveToCart,
-  ), // tabFavorites (2)
-  const SettingsScreen(), // tabProfile (3)
-  CartScreen(
-    cartItems: _cartItems,
-    favorites: _favorites,
-    couponCode: _selectedCoupon,
-    isTab: true,
-    onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
-  ), // tabCart (4)
-  const NearbyScreen(), // tabNearby (5)
-  const BookingScreen(), // tabBooking (6)
-  const ChatScreen(), // tabChat (7)
-  const MapScreen(), // tabMap (8)
-  PromotionsScreen(onCouponApplied: _applyCoupon), // tabPromotions (9)
-];
-=======
-    HomeBody(
-      // 0
-      favorites: _favorites,
-      onToggleFavorite: _toggleFavorite,
-    ),
-    const ShopScreen(), // 1
-    FavoritesScreen(
-      // 2
-      favoriteItems: _favorites,
-      onFavoritesUpdated: () => setState(() {}),
-      onMoveToCart: _moveToCart,
-    ),
-    SettingsScreen(onLogout: _onLogout), // 3
-    CartScreen(
-      // 4
-      cartItems: _cartItems,
-      favorites: _favorites,
-      couponCode: _selectedCoupon,
-      isTab: true,
-      onNavigate: (i) => setState(() => _selectedIndex = i),
-    ),
-    NearbyScreen(
-      // 5
-      onNavigate: (i) => setState(() => _selectedIndex = i),
-    ),
-    BookingScreen(
-      // 6 ✅ restored
-      // onNavigate: (i) => setState(() => _selectedIndex = i),
-    ),
-    const ChatScreen(), // 7
-    const MapScreen(), // 8 ✅ now correct
-    PromotionsScreen(onCouponApplied: _applyCoupon), // 9
-  ];
->>>>>>> 0c5f4946e956ec11c297a5046c1e0604f12753a3
+        HomeBody(
+          favorites: _favorites,
+          onToggleFavorite: _toggleFavorite,
+          onAddToCart: _moveToCart,
+        ), // 0
+        ShopScreen(
+          favoriteItems: _favorites,
+          onToggleFavorite: _toggleFavorite,
+          onAddToCart: _moveToCart,
+        ), // 1
+        FavoritesScreen(
+          favoriteItems: _favorites,
+          onFavoritesUpdated: () => setState(() {}),
+          onMoveToCart: _moveToCart,
+        ), // 2
+        SettingsScreen(onLogout: _onLogout), // 3
+        CartScreen(
+          cartItems: _cartItems,
+          favorites: _favorites,
+          couponCode: _selectedCoupon,
+          isTab: true,
+          onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
+        ), // 4
+        NearbyScreen(
+          onNavigate: (i) => setState(() => _selectedIndex = i),
+        ), // 5
+        const BookingScreen(), // 6
+        const ChatScreen(), // 7
+        const MapScreen(), // 8
+        PromotionsScreen(onCouponApplied: _applyCoupon), // 9
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +125,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         onCartPressed: () => setState(() => _selectedIndex = tabCart),
         onSearchPressed: () {},
         onNavigate: (i) => setState(() => _selectedIndex = i),
-        // ── All tab content ────────────────────────────────────
         child: IndexedStack(index: _selectedIndex, children: _pages),
       ),
     );
