@@ -16,6 +16,40 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
+class ChatBotEngine {
+  static String getReply(String message) {
+    final msg = message.toLowerCase();
+
+    // ── GREETING ─────────────────────
+    if (msg.contains('hi') || msg.contains('hello')) {
+      return "Hi 👋 I'm TinyTots Assistant. I can help you with orders, returns, and products.";
+    }
+
+    // ── ORDER TRACKING ───────────────
+    if (msg.contains('order') || msg.contains('track')) {
+      return "📦 Sure! Please send your order ID and I’ll check the status for you.";
+    }
+
+    // ── RETURNS ───────────────────────
+    if (msg.contains('return') || msg.contains('refund')) {
+      return "↩️ You can return items within 30 days if unused and in original packaging.";
+    }
+
+    // ── SHIPPING ──────────────────────
+    if (msg.contains('shipping') || msg.contains('delivery')) {
+      return "🚚 Delivery takes 2–5 days depending on your location. Free over \$50.";
+    }
+
+    // ── PRODUCTS ──────────────────────
+    if (msg.contains('product') || msg.contains('buy')) {
+      return "🧸 Tell me your baby's age and I’ll recommend the best products.";
+    }
+
+    // ── DEFAULT ───────────────────────
+    return "🤖 I’m not fully sure yet, but I can connect you to a human agent or help with orders, returns, and products.";
+  }
+}
+
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -30,10 +64,11 @@ class _ChatScreenState extends State<ChatScreen> {
   ];
 
   final List<String> _quickReplies = [
-    'Track my order',
-    'Return policy',
-    'Product advice',
-    'Store locations',
+    'Track order',
+    'Return item',
+    'Delivery information',
+    'Product recommendation',
+    'Talk to human agent',
   ];
 
   void _sendMessage(String text) {
@@ -56,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _isTyping = false;
         _messages.add(
           ChatMessage(
-            text: _getMockReply(text),
+            text: ChatBotEngine.getReply(text),
             isUser: false,
             time: DateTime.now(),
           ),
@@ -64,20 +99,6 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       _scrollToBottom();
     });
-  }
-
-  String _getMockReply(String message) {
-    final msg = message.toLowerCase();
-    if (msg.contains('order') || msg.contains('track')) {
-      return 'I can help you track your order! Please share your order number and I\'ll look it up for you.';
-    } else if (msg.contains('return')) {
-      return 'We offer a 30-day return policy on all items. Items must be unused and in original packaging. Shall I start a return for you?';
-    } else if (msg.contains('store') || msg.contains('location')) {
-      return 'We have multiple TinyTots locations! Check the Nearby Stores section in the app to find the closest one to you.';
-    } else if (msg.contains('product') || msg.contains('advice')) {
-      return 'I\'d love to help you find the perfect product! What age is your little one and what are you looking for?';
-    }
-    return 'Thank you for reaching out! Our team will get back to you shortly. Is there anything else I can help with?';
   }
 
   void _scrollToBottom() {
