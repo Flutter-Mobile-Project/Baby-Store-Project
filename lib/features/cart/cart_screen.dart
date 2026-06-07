@@ -1,6 +1,9 @@
+import 'package:baby_store_app/features/auth/register_screen.dart';
+import 'package:baby_store_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import '../shell/main_shell_screen.dart';
+import 'package:baby_store_app/features/cart/checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -34,6 +37,16 @@ class _CartScreenState extends State<CartScreen> {
     'WHEELS50': {'type': 'fixed', 'value': 50},
     'B3G1FREE': {'type': 'percentage', 'value': 25},
   };
+
+  void _goToCheckout() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CheckoutScreen(cartItems: cartItems, total: total),
+      ),
+    );
+  }
 
   @override
   void didUpdateWidget(covariant CartScreen oldWidget) {
@@ -443,9 +456,28 @@ class _CartScreenState extends State<CartScreen> {
                 const SizedBox(height: 30),
 
                 // ── Checkout ────────────────────────────────────
+                // ── Checkout ────────────────────────────────────────────
                 GestureDetector(
-                  onTap: () {
-                    // TODO: navigate to checkout screen
+                  onTap: () async {
+                    // ✅ Check if user is registered before checkout
+                    if (!AuthService.isRegistered) {
+                      final result =
+                          await Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          );
+                      if (!mounted) return;
+                      if (result == true) {
+                        AuthService.isRegistered = true;
+                        // ✅ Proceed to checkout after registration
+                        _goToCheckout();
+                      }
+                      // If user dismissed register without completing, do nothing
+                    } else {
+                      // ✅ Already registered — go straight to checkout
+                      _goToCheckout();
+                    }
                   },
                   child: Container(
                     width: double.infinity,
@@ -478,6 +510,7 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 30),
               ],
             ),

@@ -73,7 +73,17 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
+  void _onLogout() {
+    setState(() {
+      _selectedIndex = tabHome;
+      _cartItems = [];
+      _favorites = [];
+      _selectedCoupon = null;
+    });
+  }
+
   List<Widget> get _pages => [
+<<<<<<< HEAD
   HomeBody(
     favorites: _favorites,
     onToggleFavorite: _toggleFavorite,
@@ -103,6 +113,41 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   const MapScreen(), // tabMap (8)
   PromotionsScreen(onCouponApplied: _applyCoupon), // tabPromotions (9)
 ];
+=======
+    HomeBody(
+      // 0
+      favorites: _favorites,
+      onToggleFavorite: _toggleFavorite,
+    ),
+    const ShopScreen(), // 1
+    FavoritesScreen(
+      // 2
+      favoriteItems: _favorites,
+      onFavoritesUpdated: () => setState(() {}),
+      onMoveToCart: _moveToCart,
+    ),
+    SettingsScreen(onLogout: _onLogout), // 3
+    CartScreen(
+      // 4
+      cartItems: _cartItems,
+      favorites: _favorites,
+      couponCode: _selectedCoupon,
+      isTab: true,
+      onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
+    NearbyScreen(
+      // 5
+      onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
+    BookingScreen(
+      // 6 ✅ restored
+      // onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
+    const ChatScreen(), // 7
+    const MapScreen(), // 8 ✅ now correct
+    PromotionsScreen(onCouponApplied: _applyCoupon), // 9
+  ];
+>>>>>>> 0c5f4946e956ec11c297a5046c1e0604f12753a3
 
   @override
   Widget build(BuildContext context) {

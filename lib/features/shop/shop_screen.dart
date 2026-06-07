@@ -1,4 +1,4 @@
-import 'package:baby_store_app/models/product.dart';
+import 'package:baby_store_app/data/mock_product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../detail/product_detail_screen.dart';
@@ -22,6 +22,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final List<Product> products = [
       Product(
         brand: "SILKYCARE",
@@ -49,6 +50,9 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
     ];
 
+=======
+    // 🧸 Fixed: Instantiating actual Product objects instead of raw Maps
+>>>>>>> 0c5f4946e956ec11c297a5046c1e0604f12753a3
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SingleChildScrollView(
