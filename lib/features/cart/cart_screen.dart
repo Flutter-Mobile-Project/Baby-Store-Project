@@ -3,6 +3,7 @@ import 'package:baby_store_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import '../shell/main_shell_screen.dart';
+import 'package:baby_store_app/features/cart/checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -38,22 +39,11 @@ class _CartScreenState extends State<CartScreen> {
   };
 
   void _goToCheckout() {
-    // TODO: replace with your real checkout screen later
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text(
-              'Proceeding to checkout...',
-              style: TextStyle(fontFamily: 'Nunito'),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF556B7B),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CheckoutScreen(cartItems: cartItems, total: total),
       ),
     );
   }
