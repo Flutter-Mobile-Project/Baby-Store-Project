@@ -2,61 +2,75 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
-  const ProductDetailsScreen({super.key});
+  final Map<String, dynamic>? product;
+  final Function(List<Map<String, dynamic>>) onAddToCart;
+
+  const ProductDetailsScreen({
+    super.key,
+    this.product,
+    required this.onAddToCart,
+  });
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  // These variables hold the state so the UI updates when a user taps them!
   String _selectedColor = 'Mint';
   String _selectedSize = '0-3M';
   int _quantity = 1;
 
+  final Map<String, String> _colorImages = {
+    'Pink': 'assets/images/product/cartoonPink.png',
+    'Mint': 'assets/images/product/img2.png',
+    'Blue': 'assets/images/product/cartoonBlue.png',
+  };
+
+  void _handleAddToCart() {
+    List<Map<String, dynamic>> itemsToAdd = [
+      {
+        'title': widget.product?['title'] ?? 'Organic Cotton Sleepsuit',
+        'price': widget.product?['price'] ?? '\$24.00',
+        'qty': _quantity,
+        'color': _selectedColor,
+        'size': _selectedSize,
+      },
+    ];
+
+    widget.onAddToCart(itemsToAdd);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Added to Cart! 🛍️'),
+        backgroundColor: Color(0xFF556672),
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cream, // Matches the warm Figma background
-      // 1. The Top App Bar
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         elevation: 0,
-        // Using a back button here so users can return to the Home Screen
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'TinyTots',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.shopping_cart_outlined,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: () {},
+            icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textPrimary),
+            onPressed: _handleAddToCart,
           ),
         ],
       ),
-
-      // 2. The Scrolling Body
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         children: [
-          // --- IMAGE SECTION WITH DOTS & ZOOM ICON ---
+          // IMAGE SECTION
           Stack(
             children: [
               Container(
@@ -64,15 +78,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(32),
-                  image: const DecorationImage(
-                    image: AssetImage(
-                      'assets/images/product/img2.png',
-                    ), // Use your actual asset
+                  image: DecorationImage(
+                    image: AssetImage(_colorImages[_selectedColor]!),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              // Zoom Icon Top Right
               Positioned(
                 top: 16,
                 right: 16,
@@ -86,26 +97,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ),
                 ),
               ),
-              // Image Dots Bottom Center
-              Positioned(
-                bottom: 16,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildDot(isActive: true),
-                    _buildDot(isActive: false),
-                    _buildDot(isActive: false),
-                    _buildDot(isActive: false),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 24),
 
-          // --- REVIEWS & TITLE ---
+          // REVIEWS & TITLE
           Row(
             children: [
               Row(
@@ -113,7 +109,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   5,
                   (index) => const Icon(
                     Icons.star,
-                    color: Color(0xFFFFD700), // Gold
+                    color: Color(0xFFFFD700),
                     size: 16,
                   ),
                 ),
@@ -125,7 +121,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   fontFamily: 'Nunito',
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -137,12 +132,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               fontFamily: 'Poppins',
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
 
-          // --- PRICE ROW ---
+          // PRICE
           Row(
             children: [
               const Text(
@@ -151,51 +145,27 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   fontFamily: 'Poppins',
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF4A5D6B), // Slate color
                 ),
               ),
               const SizedBox(width: 12),
               const Text(
                 '\$35.00',
                 style: TextStyle(
-                  fontFamily: 'Poppins',
                   fontSize: 16,
-                  color: AppColors.textSecondary,
                   decoration: TextDecoration.lineThrough,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.mint,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  '30% OFF',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          // --- COLOR SELECTION ---
+          // COLOR SELECTION
           Text(
             'COLOR: ${_selectedColor.toUpperCase()}',
             style: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -210,7 +180,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
           const SizedBox(height: 24),
 
-          // --- SIZE SELECTION ---
+          // SIZE SELECTION
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
@@ -220,18 +190,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   fontFamily: 'Poppins',
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 'Size Guide',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A5D6B), // Slate color link
-                  decoration: TextDecoration.underline,
-                ),
+                style: TextStyle(decoration: TextDecoration.underline),
               ),
             ],
           ),
@@ -240,22 +203,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildSizePill('0-3M'),
-              _buildSizePill('3-6M'),
-              _buildSizePill('6-9M'),
-              _buildSizePill('9-12M'),
-            ],
+              '0-3M',
+              '3-6M',
+              '6-9M',
+              '9-12M',
+            ].map((s) => _buildSizePill(s)).toList(),
           ),
           const SizedBox(height: 24),
 
-          // --- QUANTITY ---
+          // QUANTITY
           const Text(
             'QUANTITY',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -263,21 +225,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             width: 120,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.beige, // Slightly darker than background
+              color: AppColors.beige,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    if (_quantity > 1) setState(() => _quantity--);
-                  },
-                  child: const Icon(
-                    Icons.remove,
-                    size: 20,
-                    color: AppColors.textPrimary,
-                  ),
+                  onTap: () =>
+                      setState(() => _quantity > 1 ? _quantity-- : null),
+                  child: const Icon(Icons.remove, size: 20),
                 ),
                 Text(
                   '$_quantity',
@@ -288,18 +245,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
                 GestureDetector(
                   onTap: () => setState(() => _quantity++),
-                  child: const Icon(
-                    Icons.add,
-                    size: 20,
-                    color: AppColors.textPrimary,
-                  ),
+                  child: const Icon(Icons.add, size: 20),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // --- TAGS ---
+          // TAGS
           Row(
             children: [
               Expanded(
@@ -322,68 +275,79 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 40),
         ],
       ),
-
-      // 3. The Bottom Action Bar
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.cream,
-          border: Border(
-            top: BorderSide(color: Colors.grey.shade300, width: 1),
-          ),
+          border: Border(top: BorderSide(color: Colors.grey.shade300)),
         ),
         child: SafeArea(
           child: Row(
             children: [
-              // Heart Button
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.textPrimary, width: 1.5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.favorite_border,
-                  color: AppColors.textPrimary,
+              // --- SMART HEART BUTTON ---
+              GestureDetector(
+                onTap: () {
+                  // 1. Show feedback popup without navigating away
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Added to Favorites ❤️',
+                        style: TextStyle(fontFamily: 'Nunito'),
+                      ),
+                      backgroundColor: AppColors.mint,
+                      duration: Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.textPrimary),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_border),
                 ),
               ),
               const SizedBox(width: 16),
 
-              // Add to Cart Button
+              // --- ADD TO CART BUTTON ---
               Expanded(
                 child: SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF556672,
-                      ), // Matches Figma Slate
+                      backgroundColor: const Color(0xFF556672),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
                       ),
-                      elevation: 0,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.shopping_bag_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Add to Cart',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                    onPressed: () {
+                      // 2. Logic: Print or save to your Global Cart list
+                      print(
+                        "Added to cart: $_selectedColor, $_selectedSize, Qty: $_quantity",
+                      );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Added to Cart! 🛍️',
+                            style: TextStyle(fontFamily: 'Nunito'),
                           ),
+                          backgroundColor: Color(0xFF556672),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
                         ),
-                      ],
+                      );
+                    },
+                    child: const Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -395,24 +359,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  // --- HELPER WIDGETS ---
-
-  // Builds the tiny dots under the image
-  Widget _buildDot({required bool isActive}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      height: 8,
-      width: 8,
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF4A5D6B) : Colors.grey.shade400,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  // Builds the interactive color circles
   Widget _buildColorSelector(Color color, String colorName) {
-    bool isSelected = _selectedColor == colorName;
     return GestureDetector(
       onTap: () => setState(() => _selectedColor = colorName),
       child: Container(
@@ -420,8 +367,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? AppColors.textPrimary : Colors.transparent,
-            width: 1.5,
+            color: _selectedColor == colorName
+                ? AppColors.textPrimary
+                : Colors.transparent,
+            width: 2,
           ),
         ),
         child: CircleAvatar(backgroundColor: color, radius: 16),
@@ -429,29 +378,30 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  // Builds the interactive size pills
   Widget _buildSizePill(String size) {
-    bool isSelected = _selectedSize == size;
     return GestureDetector(
       onTap: () => setState(() => _selectedSize = size),
       child: Container(
         width: 75,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.babyBlue : Colors.transparent,
+          color: _selectedSize == size
+              ? AppColors.babyBlue
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.grey.shade400,
+            color: _selectedSize == size
+                ? Colors.transparent
+                : Colors.grey.shade400,
           ),
         ),
         child: Center(
           child: Text(
             size,
             style: TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 14,
-              color: AppColors.textPrimary,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight: _selectedSize == size
+                  ? FontWeight.bold
+                  : FontWeight.normal,
             ),
           ),
         ),
@@ -459,7 +409,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  // Builds the soft pastel tags
   Widget _buildTag(Color bgColor, IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -470,16 +419,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18, color: AppColors.textPrimary),
+          Icon(icon, size: 18),
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ],
       ),

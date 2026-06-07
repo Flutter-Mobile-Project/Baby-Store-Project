@@ -7,11 +7,13 @@ import 'widgets/new_arrivals.dart';
 class HomeBody extends StatelessWidget {
   final List<Map<String, String>> favorites;
   final void Function(Map<String, String>) onToggleFavorite;
-
+  final Function(List<Map<String, dynamic>>) onAddToCart;
+  
   const HomeBody({
     super.key,
     required this.favorites,
     required this.onToggleFavorite,
+    required this.onAddToCart,
   });
 
   @override
@@ -32,6 +34,7 @@ class HomeBody extends StatelessWidget {
           NewArrivals(
             favoriteItems: favorites,
             onToggleFavorite: onToggleFavorite,
+            onAddToCart: onAddToCart,
           ),
         ],
       ),

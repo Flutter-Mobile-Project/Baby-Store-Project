@@ -74,28 +74,35 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   }
 
   List<Widget> get _pages => [
-    HomeBody(favorites: _favorites, onToggleFavorite: _toggleFavorite),
-    const ShopScreen(),
-    FavoritesScreen(
-      favoriteItems: _favorites,
-      onFavoritesUpdated: () => setState(() {}),
-      onMoveToCart: _moveToCart, // ✅ pass callback to FavoritesScreen
-    ),
-    const SettingsScreen(),
-    CartScreen(
-      cartItems: _cartItems,
-      favorites: _favorites,
-      couponCode: _selectedCoupon,
-
-      isTab: true,
-      onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
-    ),
-    const NearbyScreen(),
-    const BookingScreen(),
-    const ChatScreen(),
-    const MapScreen(),
-    PromotionsScreen(onCouponApplied: _applyCoupon),
-  ];
+  HomeBody(
+    favorites: _favorites,
+    onToggleFavorite: _toggleFavorite,
+    onAddToCart: _moveToCart,
+  ), // tabHome (0)
+  ShopScreen(
+    favoriteItems: _favorites, 
+    onToggleFavorite: _toggleFavorite,
+    onAddToCart: _moveToCart,
+  ), // tabShop (1)
+  FavoritesScreen(
+    favoriteItems: _favorites,
+    onFavoritesUpdated: () => setState(() {}),
+    onMoveToCart: _moveToCart,
+  ), // tabFavorites (2)
+  const SettingsScreen(), // tabProfile (3)
+  CartScreen(
+    cartItems: _cartItems,
+    favorites: _favorites,
+    couponCode: _selectedCoupon,
+    isTab: true,
+    onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
+  ), // tabCart (4)
+  const NearbyScreen(), // tabNearby (5)
+  const BookingScreen(), // tabBooking (6)
+  const ChatScreen(), // tabChat (7)
+  const MapScreen(), // tabMap (8)
+  PromotionsScreen(onCouponApplied: _applyCoupon), // tabPromotions (9)
+];
 
   @override
   Widget build(BuildContext context) {

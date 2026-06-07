@@ -6,11 +6,13 @@ import '../../detail/product_detail_screen.dart';
 class NewArrivals extends StatelessWidget {
   final List<Map<String, String>> favoriteItems;
   final Function(Map<String, String>) onToggleFavorite;
+  final Function(List<Map<String, dynamic>>) onAddToCart;
 
   const NewArrivals({
     super.key,
     required this.favoriteItems,
     required this.onToggleFavorite,
+    required this.onAddToCart,
   });
 
   @override
@@ -103,7 +105,11 @@ class NewArrivals extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProductDetailsScreen()),
+          MaterialPageRoute(builder: (context) => ProductDetailsScreen(
+            product: {'title': title, 'price': price, 'image': imagePath, 'category': category},
+              onAddToCart: onAddToCart, // ✅ PASS THE FUNCTION HERE
+          ),
+          ),
         );
       },
 

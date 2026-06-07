@@ -3,12 +3,25 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../detail/product_detail_screen.dart';
 
-class ShopScreen extends StatelessWidget {
-  const ShopScreen({super.key});
+class ShopScreen extends StatefulWidget {
+  final List<Map<String, dynamic>> favoriteItems;
+  final Function(Map<String, String>) onToggleFavorite;
+  final Function(List<Map<String, dynamic>>) onAddToCart;
+
+  const ShopScreen({
+    super.key,
+    required this.favoriteItems,
+    required this.onToggleFavorite,
+    required this.onAddToCart,
+  });
 
   @override
+  State<ShopScreen> createState() => _ShopScreenState();
+}
+
+class _ShopScreenState extends State<ShopScreen> {
+  @override
   Widget build(BuildContext context) {
-    // 🧸 Fixed: Instantiating actual Product objects instead of raw Maps
     final List<Product> products = [
       Product(
         brand: "SILKYCARE",
@@ -43,7 +56,6 @@ class ShopScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🏷️ Header Block
             const Text(
               "Baby Essentials",
               style: TextStyle(
@@ -53,29 +65,7 @@ class ShopScreen extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              "Gentle products for your little one's big moments. Curated with love and safety in mind.",
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 14,
-                color: Colors.black54,
-                height: 1.3,
-              ),
-            ),
             const SizedBox(height: 16),
-
-            // 🎛️ Filter and Sort Controls
-            Row(
-              children: [
-                _buildActionButton(Icons.tune, "Filter"),
-                const SizedBox(width: 10),
-                _buildActionButton(Icons.swap_vert, "Sort"),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 🛍️ Product Grid
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -88,14 +78,26 @@ class ShopScreen extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final product = products[index];
+                final bool isSaved = widget.favoriteItems.any(
+                  (item) => item['title'] == product.title,
+                );
 
-                // --- ADDED GESTURE DETECTOR HERE ---
                 return GestureDetector(
                   onTap: () {
+                    // ✅ FIXED: Pass the real onAddToCart function here
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ProductDetailsScreen(),
+                        builder: (context) => ProductDetailsScreen(
+                          product: {
+                            'title': product.title,
+                            'price': '\$${product.price.toStringAsFixed(2)}',
+                            'image': product.image,
+                            'category': product.brand,
+                          },
+                          onAddToCart: widget
+                              .onAddToCart, // <--- This connects the bridge
+                        ),
                       ),
                     );
                   },
@@ -108,7 +110,6 @@ class ShopScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 📸 Image Container with Absolute Positioned Heart Button
                         Expanded(
                           child: Stack(
                             children: [
@@ -116,7 +117,7 @@ class ShopScreen extends StatelessWidget {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(22),
                                   child: Image.asset(
-                                    product.image, // ✨ Fixed: Uses dot notation
+                                    product.image,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -124,17 +125,31 @@ class ShopScreen extends StatelessWidget {
                               Positioned(
                                 top: 8,
                                 right: 8,
-                                child: Container(
-                                  height: 36,
-                                  width: 36,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white70,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.favorite_border,
-                                    size: 20,
-                                    color: AppColors.textPrimary,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    widget.onToggleFavorite({
+                                      'title': product.title,
+                                      'category': product.brand,
+                                      'price': product.price.toStringAsFixed(2),
+                                      'image': product.image,
+                                    });
+                                  },
+                                  child: Container(
+                                    height: 36,
+                                    width: 36,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white70,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isSaved
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      size: 20,
+                                      color: isSaved
+                                          ? Colors.red
+                                          : AppColors.textPrimary,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -142,76 +157,39 @@ class ShopScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 10),
-
-                        // 📝 Product Information Metadata
                         Text(
-                          product.brand, // ✨ Fixed: Uses dot notation
+                          product.brand,
                           style: const TextStyle(
-                            fontFamily: 'Nunito',
                             fontSize: 10,
-                            fontWeight: FontWeight.w800,
                             color: Colors.black38,
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
-                          product.title, // ✨ Fixed: Uses dot notation
+                          product.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontFamily: 'Nunito',
                             fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
                         Text(
-                          "\$${product.price.toStringAsFixed(2)}", // ✨ Fixed: Uses dot notation
+                          "\$${product.price.toStringAsFixed(2)}",
                           style: const TextStyle(
-                            fontFamily: 'Nunito',
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.black54,
                           ),
                         ),
-                        const SizedBox(height: 4),
                       ],
                     ),
                   ),
                 );
               },
             ),
-            const SizedBox(height: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EFEA),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.textPrimary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Nunito',
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
       ),
     );
   }
