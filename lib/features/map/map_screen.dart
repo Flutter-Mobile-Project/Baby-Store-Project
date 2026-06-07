@@ -1,159 +1,64 @@
+// lib/features/map/presentation/map_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:baby_store_app/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:baby_store_app/state/store_provider.dart';
 
-class MapScreen extends StatelessWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
-  static const CameraPosition _initialPosition = CameraPosition(
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  GoogleMapController? _mapController;
+  Set<Marker> _customMarkers = {};
+
+  static const CameraPosition _defaultPosition = CameraPosition(
     target: LatLng(11.5564, 104.9282),
-    zoom: 13,
+    zoom: 13.5,
   );
 
   @override
   Widget build(BuildContext context) {
-    // ── No Scaffold, no AppBar — shell owns those ──
+    // 1. Listen for branch selections made on the Nearby tab
+    final storeProvider = Provider.of<StoreProvider>(context);
+
+    // 2. If a specific branch was tapped, update camera location reactively
+    if (_mapController != null && storeProvider.selectedCoordinates != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(storeProvider.selectedCoordinates!, 15.5),
+      );
+      // Optional: Clear selection afterward so the user can pan freely again
+      storeProvider.clearSelectedCoordinates();
+    }
+
     return Stack(
       children: [
-        // ── Google Map ─────────────────────────────────────────
         GoogleMap(
-          initialCameraPosition: _initialPosition,
-          myLocationButtonEnabled: true,
+          initialCameraPosition: _defaultPosition,
+          myLocationButtonEnabled: false,
           myLocationEnabled: true,
           zoomControlsEnabled: false,
-          markers: _storeMarkers,
-        ),
+          markers: _customMarkers,
+          onMapCreated: (GoogleMapController controller) {
+            _mapController = controller;
 
-        // ── Store count badge ──────────────────────────────────
-        Positioned(
-          top: 16,
-          left: 16,
-          right: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.store, color: AppColors.textPrimary, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  '2 TinyTots stores nearby',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  'Open now',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 12,
-                    color: Colors.green,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // ── View nearby list button ────────────────────────────
-        Positioned(
-          bottom: 20,
-          left: 20,
-          right: 20,
-          child: GestureDetector(
-            onTap: () {
-              // Switch to nearby tab (index 5 in shell)
-              // No Navigator.pop needed — just inform user
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Tap "Nearby" in the menu to see the list',
-                    style: TextStyle(fontFamily: 'Nunito'),
-                  ),
-                  backgroundColor: Color(0xFF556B7B),
-                  behavior: SnackBarBehavior.floating,
+            // Handle edge case: if tab switches over and data is already waiting
+            if (storeProvider.selectedCoordinates != null) {
+              _mapController!.animateCamera(
+                CameraUpdate.newLatLngZoom(
+                  storeProvider.selectedCoordinates!,
+                  15.5,
                 ),
               );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF556B7B),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.list, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'View Nearby Stores List',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+              storeProvider.clearSelectedCoordinates();
+            }
+          },
         ),
+        // ... (Keep the rest of your Top Bar and Bottom Bar code exactly the same!)
       ],
     );
   }
 }
-
-/// ── Store markers ──────────────────────────────────────────────
-final Set<Marker> _storeMarkers = {
-  Marker(
-    markerId: const MarkerId('store_1'),
-    position: const LatLng(11.5564, 104.9282),
-    infoWindow: const InfoWindow(
-      title: 'TinyTots Blossom Village',
-      snippet: 'In Stock',
-    ),
-  ),
-  Marker(
-    markerId: const MarkerId('store_2'),
-    position: const LatLng(11.5650, 104.9210),
-    infoWindow: const InfoWindow(
-      title: 'Baby Haven Central',
-      snippet: 'Limited Stock',
-    ),
-  ),
-};
