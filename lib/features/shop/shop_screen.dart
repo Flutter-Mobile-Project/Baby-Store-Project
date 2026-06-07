@@ -1,4 +1,4 @@
-import 'package:baby_store_app/models/product.dart';
+import 'package:baby_store_app/data/mock_product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../detail/product_detail_screen.dart';
@@ -9,33 +9,6 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 🧸 Fixed: Instantiating actual Product objects instead of raw Maps
-    final List<Product> products = [
-      Product(
-        brand: "SILKYCARE",
-        title: "Anti-Colic Bottle",
-        price: 24.00,
-        image: "assets/images/category/bottle.png",
-      ),
-      Product(
-        brand: "CLOUDCOTTON",
-        title: "Organic Onesie",
-        price: 32.00,
-        image: "assets/images/category/onesie.png",
-      ),
-      Product(
-        brand: "WOODYTOY",
-        title: "Natural Beech Rattle",
-        price: 18.50,
-        image: "assets/images/category/rattle.png",
-      ),
-      Product(
-        brand: "HUGGYBUDDY",
-        title: "Sage Plush Friend",
-        price: 28.00,
-        image: "assets/images/category/teddy.png",
-      ),
-    ];
-
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SingleChildScrollView(
