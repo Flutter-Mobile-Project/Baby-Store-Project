@@ -218,8 +218,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           }
                         },
                         child: Container(
-                          width: 36,
-                          height: 36,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
@@ -251,19 +251,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 28),
 
                         // ── Brand mark ────────────────────────
                         Center(
                           child: Column(
                             children: [
                               Container(
-                                width: 50,
-                                height: 50,
+                                width: 46,
+                                height: 46,
                                 decoration: BoxDecoration(
                                   color: _sage.withOpacity(0.15),
                                   shape: BoxShape.circle,
@@ -274,7 +274,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                   color: _sage,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                               Text(
                                 _currentStep == 0
                                     ? 'Create Account'
@@ -304,7 +304,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 32),
 
                         // ── Step content ──────────────────────
                         FadeTransition(
@@ -317,7 +317,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -343,7 +343,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           error: _nameError,
           onChanged: _onNameChanged,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _buildField(
           label: 'Email Address',
           hint: 'sarah@example.com',
@@ -353,7 +353,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           keyboardType: TextInputType.emailAddress,
           onChanged: _onEmailChanged,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         _buildField(
           label: 'Password',
           hint: 'Min. 8 characters',
@@ -383,7 +383,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           _buildStrengthBar(),
         ],
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
 
         // ── Divider ───────────────────────────────────────
         Row(
@@ -405,7 +405,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -426,7 +426,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ],
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
 
         // ── Continue button ───────────────────────────────
         _buildPrimaryButton(
@@ -435,7 +435,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           onTap: _nextStep,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
 
         // ── Sign in ───────────────────────────────────────
         Center(
@@ -616,7 +616,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ),
         ),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
         // ── Membership preview ────────────────────────────
         Container(
@@ -670,7 +670,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ),
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
 
         // ── Register button ───────────────────────────────
         _buildPrimaryButton(
@@ -791,8 +791,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         child: Center(
           child: isLoading
               ? const SizedBox(
-                  width: 22,
-                  height: 22,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
                     color: Colors.white,
                     strokeWidth: 2,

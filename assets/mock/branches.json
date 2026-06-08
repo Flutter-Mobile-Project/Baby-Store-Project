@@ -18,5 +18,15 @@
     "rating": 4.7,
     "stockText": "Limited Stock Available",
     "image": "assets/images/nearby/store2.jpg"
+  },
+  {
+    "id": "3",
+    "name": "Little Sprouts Boutique",
+    "address": "789 Suburbia Ave",
+    "latitude": 11.5500,
+    "longitude": 104.9300,
+    "rating": 4.8,
+    "stockText": "In Stock: Eco-Friendly Diapers",
+    "image": "assets/images/nearby/store3.jpg"
   }
 ]

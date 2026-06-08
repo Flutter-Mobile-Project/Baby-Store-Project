@@ -1,119 +1,137 @@
-import 'package:baby_store_app/data/mock_repository.dart';
-import 'package:baby_store_app/models/specialist.dart';
-import 'package:baby_store_app/models/time_slot.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BookingProvider extends ChangeNotifier {
-  final MockRepository _repository;
+class Specialist {
+  final String name;
+  final String role;
+  final double rating;
+  final String image;
+  const Specialist({
+    required this.name,
+    required this.role,
+    required this.rating,
+    required this.image,
+  });
+}
 
-  BookingProvider({required MockRepository repository})
-    : _repository = repository {
-    _initializeSpecialists();
-  }
+class TimeSlot {
+  final String time;
+  final bool isBooked;
+  const TimeSlot({required this.time, this.isBooked = false});
+}
 
-  List<Specialist> _specialists = [];
-  int _selectedSpecialistIndex = 0;
-  DateTime _selectedDate = DateTime.now();
-  String? _selectedSlotTime;
+class BookingState {
+  final int selectedSpecialistIndex;
+  final DateTime selectedDate;
+  final String? selectedSlotTime;
+  final bool isSubmitting;
+  final bool isSuccess;
+  // Client info
+  final String clientName;
+  final String clientPhone;
+  final String clientNote;
 
-  List<TimeSlot> _morningSlots = [];
-  List<TimeSlot> _afternoonSlots = [];
-  bool _isLoadingSlots = false;
-  bool _isSubmitting = false;
+  const BookingState({
+    this.selectedSpecialistIndex = 0,
+    DateTime? selectedDate,
+    this.selectedSlotTime,
+    this.isSubmitting = false,
+    this.isSuccess = false,
+    this.clientName = '',
+    this.clientPhone = '',
+    this.clientNote = '',
+  }) : selectedDate = selectedDate ?? const _Now();
 
-  List<Specialist> get specialists => _specialists;
-  int get selectedSpecialistIndex => _selectedSpecialistIndex;
-  DateTime get selectedDate => _selectedDate;
-  String? get selectedSlotTime => _selectedSlotTime;
-
-  List<TimeSlot> get morningSlots => _morningSlots;
-  List<TimeSlot> get afternoonSlots => _afternoonSlots;
-  bool get isLoadingSlots => _isLoadingSlots;
-  bool get isSubmitting => _isSubmitting;
-
-  Specialist? get currentSpecialist =>
-      _specialists.isNotEmpty ? _specialists[_selectedSpecialistIndex] : null;
-
-  void _initializeSpecialists() {
-    _specialists = _repository.getSpecialists();
-    if (_specialists.isNotEmpty) {
-      fetchAvailableSlots();
-    }
-  }
-
-  void selectSpecialist(int index) {
-    if (_selectedSpecialistIndex == index) return;
-    _selectedSpecialistIndex = index;
-    _selectedSlotTime = null;
-    fetchAvailableSlots();
-    notifyListeners();
-  }
-
-  void selectDate(DateTime date) {
-    // Fast equality evaluation checks to eliminate rebuild noise
-    if (DateUtils.isSameDay(_selectedDate, date)) return;
-    _selectedDate = date;
-    _selectedSlotTime = null;
-    fetchAvailableSlots();
-    notifyListeners();
-  }
-
-  void selectSlotTime(String time) {
-    _selectedSlotTime = time;
-    notifyListeners();
-  }
-
-  Future<void> fetchAvailableSlots() async {
-    if (currentSpecialist == null) return;
-
-    _isLoadingSlots = true;
-    notifyListeners();
-
-    try {
-      final allSlots = await _repository.fetchSlotsByDateAndSpecialist(
-        specialistId: currentSpecialist!.id,
-        date: _selectedDate,
-      );
-
-      _morningSlots = allSlots.where((slot) => _isMorning(slot.time)).toList();
-      _afternoonSlots = allSlots
-          .where((slot) => !_isMorning(slot.time))
-          .toList();
-    } catch (_) {
-      _morningSlots = [];
-      _afternoonSlots = [];
-    } finally {
-      _isLoadingSlots = false;
-      notifyListeners();
-    }
-  }
-
-  Future<bool> bookAppointment() async {
-    if (currentSpecialist == null || _selectedSlotTime == null) return false;
-
-    _isSubmitting = true;
-    notifyListeners();
-
-    try {
-      final success = await _repository.createBooking(
-        specialistId: currentSpecialist!.id,
-        date: _selectedDate,
-        time: _selectedSlotTime!,
-      );
-
-      if (success) {
-        _selectedSlotTime = null;
-      }
-      return success;
-    } catch (_) {
-      return false;
-    } finally {
-      _isSubmitting = false;
-      notifyListeners();
-    }
-  }
-
-  bool _isMorning(String timeString) {
-    return timeString.toUpperCase().contains('AM');
+  BookingState copyWith({
+    int? selectedSpecialistIndex,
+    DateTime? selectedDate,
+    String? selectedSlotTime,
+    bool? isSubmitting,
+    bool? isSuccess,
+    String? clientName,
+    String? clientPhone,
+    String? clientNote,
+    bool clearSlot = false,
+  }) {
+    return BookingState(
+      selectedSpecialistIndex:
+          selectedSpecialistIndex ?? this.selectedSpecialistIndex,
+      selectedDate: selectedDate ?? this.selectedDate,
+      selectedSlotTime: clearSlot
+          ? null
+          : selectedSlotTime ?? this.selectedSlotTime,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      isSuccess: isSuccess ?? this.isSuccess,
+      clientName: clientName ?? this.clientName,
+      clientPhone: clientPhone ?? this.clientPhone,
+      clientNote: clientNote ?? this.clientNote,
+    );
   }
 }
+
+// Workaround for const DateTime.now()
+class _Now implements DateTime {
+  const _Now();
+  // ignore all — just used as default placeholder
+  @override
+  dynamic noSuchMethod(Invocation i) => DateTime.now();
+}
+
+class BookingNotifier extends Notifier<BookingState> {
+  static const specialists = [
+    Specialist(
+      name: 'Dr. Sarah Jenkins',
+      role: 'Senior Pediatrician',
+      rating: 4.9,
+      image: 'assets/images/specialist/sarah.png',
+    ),
+    Specialist(
+      name: 'Nurse Elena Rose',
+      role: 'Lactation Consultant',
+      rating: 4.8,
+      image: 'assets/images/specialist/elena.png',
+    ),
+  ];
+
+  static const morningSlots = [
+    TimeSlot(time: '09:00 AM'),
+    TimeSlot(time: '09:45 AM'),
+    TimeSlot(time: '10:30 AM'),
+    TimeSlot(time: '11:15 AM', isBooked: true),
+  ];
+
+  static const afternoonSlots = [
+    TimeSlot(time: '02:00 PM'),
+    TimeSlot(time: '02:45 PM'),
+    TimeSlot(time: '03:30 PM'),
+    TimeSlot(time: '04:15 PM', isBooked: true),
+  ];
+
+  @override
+  BookingState build() => BookingState(selectedDate: DateTime.now());
+
+  void selectSpecialist(int index) =>
+      state = state.copyWith(selectedSpecialistIndex: index, clearSlot: true);
+
+  void selectDate(DateTime date) =>
+      state = state.copyWith(selectedDate: date, clearSlot: true);
+
+  void selectSlot(String time) =>
+      state = state.copyWith(selectedSlotTime: time);
+
+  void updateClientName(String v) => state = state.copyWith(clientName: v);
+  void updateClientPhone(String v) => state = state.copyWith(clientPhone: v);
+  void updateClientNote(String v) => state = state.copyWith(clientNote: v);
+
+  Future<bool> confirmBooking() async {
+    state = state.copyWith(isSubmitting: true);
+    await Future.delayed(const Duration(milliseconds: 900));
+    state = state.copyWith(isSubmitting: false, isSuccess: true);
+    return true;
+  }
+
+  void reset() => state = BookingState(selectedDate: DateTime.now());
+}
+
+final bookingProvider = NotifierProvider<BookingNotifier, BookingState>(
+  BookingNotifier.new,
+);

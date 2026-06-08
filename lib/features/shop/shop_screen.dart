@@ -1,7 +1,8 @@
+import 'package:baby_store_app/data/mock_product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../detail/product_detail_screen.dart';
-import 'package:baby_store_app/models/product.dart';
+
 class ShopScreen extends StatefulWidget {
   final List<Map<String, dynamic>> favoriteItems;
   final Function(Map<String, String>) onToggleFavorite;
@@ -19,35 +20,60 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
+  String _searchQuery = '';
+  String _selectedFilter = 'All';
+
+  List get _filteredProducts {
+    List filtered = products.where((product) {
+      return product.title.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    if (_selectedFilter == 'A-Z') {
+      filtered.sort((a, b) => a.title.compareTo(b.title));
+    }
+
+    if (_selectedFilter == 'Price ↑') {
+      filtered.sort((a, b) => a.price.compareTo(b.price));
+    }
+
+    if (_selectedFilter == 'Price ↓') {
+      filtered.sort((a, b) => b.price.compareTo(a.price));
+    }
+
+    return filtered;
+  }
+
+  Widget _filterChip(String label) {
+    final selected = _selectedFilter == label;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedFilter = label;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF556B7B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-
-    final List<Product> products = [
-      Product(
-        brand: "SILKYCARE",
-        title: "Anti-Colic Bottle",
-        price: 24.00,
-        image: "assets/images/category/bottle.png",
-      ),
-      Product(
-        brand: "CLOUDCOTTON",
-        title: "Organic Onesie",
-        price: 32.00,
-        image: "assets/images/category/onesie.png",
-      ),
-      Product(
-        brand: "WOODYTOY",
-        title: "Natural Beech Rattle",
-        price: 18.50,
-        image: "assets/images/category/rattle.png",
-      ),
-      Product(
-        brand: "HUGGYBUDDY",
-        title: "Sage Plush Friend",
-        price: 28.00,
-        image: "assets/images/category/teddy.png",
-      ),
-    ];
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SingleChildScrollView(
@@ -65,10 +91,45 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search baby products...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _filterChip('All'),
+                  _filterChip('A-Z'),
+                  _filterChip('Price ↑'),
+                  _filterChip('Price ↓'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: products.length,
+              itemCount: _filteredProducts.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 14,
@@ -76,7 +137,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 childAspectRatio: 0.68,
               ),
               itemBuilder: (context, index) {
-                final product = products[index];
+                final product = _filteredProducts[index];
                 final bool isSaved = widget.favoriteItems.any(
                   (item) => item['title'] == product.title,
                 );
