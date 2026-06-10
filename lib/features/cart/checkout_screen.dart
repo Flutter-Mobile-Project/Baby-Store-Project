@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
+import 'package:baby_store_app/services/order_service.dart';
 import '../shell/main_shell_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -7,6 +8,7 @@ class CheckoutScreen extends StatefulWidget {
   final double total; // kept for compatibility (not used for calculation)
   final double discountAmount;
   final bool isTab;
+  final VoidCallback? onOrderComplete;
 
   const CheckoutScreen({
     super.key,
@@ -14,6 +16,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.total,
     required this.discountAmount,
     this.isTab = false,
+    this.onOrderComplete,
   });
 
   @override
@@ -23,6 +26,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String selectedPayment = 'card';
   bool useBillingAddress = true;
+  bool _isLoading = false;
 
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
@@ -51,6 +55,61 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double get discount => widget.discountAmount;
 
   double get total => (subtotal - discount).clamp(0, double.infinity);
+
+  void _handleCompletePurchase() async {
+    if (widget.cartItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Your cart is empty")),
+      );
+      return;
+    }
+
+    if (fullNameController.text.isEmpty || 
+        addressController.text.isEmpty || 
+        cityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all shipping details")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final error = await OrderService.placeOrder(
+      items: widget.cartItems,
+      subtotal: subtotal,
+      discount: discount,
+      total: total,
+      fullName: fullNameController.text.trim(),
+      address: addressController.text.trim(),
+      city: cityController.text.trim(),
+      paymentMethod: selectedPayment,
+    );
+
+    if (mounted) setState(() => _isLoading = false);
+
+    if (error != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to place order: $error")),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Order placed successfully using $selectedPayment!",
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Trigger callback to clear cart in MainShellScreen
+        widget.onOrderComplete?.call();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,12 +206,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    item["image"],
-                    width: 55,
-                    height: 55,
-                    fit: BoxFit.cover,
-                  ),
+                  child: item["image"].startsWith('assets/') 
+                    ? Image.asset(
+                        item["image"],
+                        width: 55,
+                        height: 55,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        item["image"],
+                        width: 55,
+                        height: 55,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag),
+                      ),
                 ),
                 title: Text(
                   item["title"],
@@ -234,15 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           // COMPLETE ORDER
           GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "Order placed successfully using $selectedPayment",
-                  ),
-                ),
-              );
-            },
+            onTap: _isLoading ? null : _handleCompletePurchase,
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -250,16 +309,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 color: const Color(0xFF556B7B),
                 borderRadius: BorderRadius.circular(35),
               ),
-              child: const Center(
-                child: Text(
-                  "Complete Purchase",
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              child: Center(
+                child: _isLoading 
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      "Complete Purchase",
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
               ),
             ),
           ),

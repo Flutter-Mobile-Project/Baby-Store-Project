@@ -14,6 +14,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isLoggingOut = false;
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider);
@@ -243,18 +245,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (user != null)
                     GestureDetector(
                       onTap: () async {
-                        await AuthService.logout();
-                        ref.read(userProvider.notifier).state = null;
+                        // Confirm logout
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Sign Out'),
+                            content: const Text('Are you sure you want to sign out?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
 
-                        if (!mounted) return;
+                        if (confirm == true) {
+                          setState(() => _isLoggingOut = true);
+                          try {
+                            await AuthService.logout();
+                            ref.read(userProvider.notifier).state = null;
 
-                        if (canPop) {
-                          Navigator.of(
-                            context,
-                          ).popUntil((route) => route.isFirst);
-                        } else {
-                          // ✅ widget.onLogout works in StatefulWidget
-                          widget.onLogout?.call();
+                            if (!mounted) return;
+
+                            // Force a full app reset by navigating to the root and clearing the stack
+                            Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                              '/', 
+                              (route) => false,
+                            );
+                          } finally {
+                            if (mounted) setState(() => _isLoggingOut = false);
+                          }
                         }
                       },
                       child: Container(
@@ -264,25 +289,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: AppColors.logoutBg,
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.logout,
-                              color: AppColors.logoutText,
-                              size: 20,
+                        child: _isLoggingOut 
+                          ? const SizedBox(
+                              height: 20, 
+                              width: 20, 
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.logoutText)
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.logout,
+                                  color: AppColors.logoutText,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Sign Out',
+                                  style: TextStyle(
+                                    color: AppColors.logoutText,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                color: AppColors.logoutText,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   const SizedBox(height: 40),

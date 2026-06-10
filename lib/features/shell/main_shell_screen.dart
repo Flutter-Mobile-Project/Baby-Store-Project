@@ -106,6 +106,15 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
+  void _onOrderComplete() {
+    setState(() {
+      _cartItems = [];
+      _selectedCoupon = null;
+      _discountAmount = 0;
+      _selectedIndex = tabHome;
+    });
+  }
+
   // ✅ This is the ONLY _pages getter you need
   List<Widget> get _pages => [
     HomeBody(
@@ -144,6 +153,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       ),
       discountAmount: _discountAmount,
       isTab: true,
+      onOrderComplete: _onOrderComplete,
     ), // 10
   ];
 

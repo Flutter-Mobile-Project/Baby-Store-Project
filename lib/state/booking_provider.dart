@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:baby_store_app/services/booking_service.dart';
 
 class Specialist {
   final String name;
@@ -25,6 +26,7 @@ class BookingState {
   final String? selectedSlotTime;
   final bool isSubmitting;
   final bool isSuccess;
+  final String? errorMessage;
   // Client info
   final String clientName;
   final String clientPhone;
@@ -36,6 +38,7 @@ class BookingState {
     this.selectedSlotTime,
     this.isSubmitting = false,
     this.isSuccess = false,
+    this.errorMessage,
     this.clientName = '',
     this.clientPhone = '',
     this.clientNote = '',
@@ -47,6 +50,7 @@ class BookingState {
     String? selectedSlotTime,
     bool? isSubmitting,
     bool? isSuccess,
+    String? errorMessage,
     String? clientName,
     String? clientPhone,
     String? clientNote,
@@ -61,6 +65,7 @@ class BookingState {
           : selectedSlotTime ?? this.selectedSlotTime,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isSuccess: isSuccess ?? this.isSuccess,
+      errorMessage: errorMessage ?? this.errorMessage,
       clientName: clientName ?? this.clientName,
       clientPhone: clientPhone ?? this.clientPhone,
       clientNote: clientNote ?? this.clientNote,
@@ -123,8 +128,25 @@ class BookingNotifier extends Notifier<BookingState> {
   void updateClientNote(String v) => state = state.copyWith(clientNote: v);
 
   Future<bool> confirmBooking() async {
-    state = state.copyWith(isSubmitting: true);
-    await Future.delayed(const Duration(milliseconds: 900));
+    state = state.copyWith(isSubmitting: true, errorMessage: null);
+    
+    final specialist = specialists[state.selectedSpecialistIndex];
+    
+    final error = await BookingService.createBooking(
+      specialistName: specialist.name,
+      specialistRole: specialist.role,
+      date: state.selectedDate,
+      time: state.selectedSlotTime!,
+      clientName: state.clientName,
+      clientPhone: state.clientPhone,
+      clientNote: state.clientNote,
+    );
+
+    if (error != null) {
+      state = state.copyWith(isSubmitting: false, errorMessage: error);
+      return false;
+    }
+
     state = state.copyWith(isSubmitting: false, isSuccess: true);
     return true;
   }

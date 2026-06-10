@@ -107,7 +107,7 @@ class ReviewsScreen extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '124 Verified Buyer\nReviews & Ratings',
-                  textAlign: Alignment.right,
+                  textAlign: TextAlign.right,
                   style: TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 14,

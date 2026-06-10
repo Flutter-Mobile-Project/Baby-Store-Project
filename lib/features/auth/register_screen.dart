@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_store_app/state/user_provider.dart';
 import 'package:baby_store_app/models/user.dart';
+import 'package:baby_store_app/services/auth_service.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -149,16 +151,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   void _register() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
 
-    ref.read(userProvider.notifier).state = User(
-      name: _nameController.text.trim(),
-      membership: 'Platinum Member',
-    );
+    try {
+      // Create account in Firebase Auth
+      auth.UserCredential result = await auth.FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+      auth.User? user = result.user;
+
+      if (user != null) {
+        // Save extra info in Firestore using AuthService helper
+        await AuthService.saveUserData(
+          uid: user.uid,
+          name: _nameController.text.trim(),
+          email: user.email!,
+          birthday: _selectedDate?.toIso8601String(),
+        );
+
+        // Save to local storage for session management
+        await AuthService.register(
+          name: _nameController.text.trim(),
+          email: user.email!,
+        );
+
+        // Update Riverpod state
+        ref.read(userProvider.notifier).state = User(
+          name: _nameController.text.trim(),
+          membership: 'Platinum Member',
+        );
+
+        Navigator.of(context, rootNavigator: true).pop(true);
+      }
+    } catch (e) {
+      print("Registration error: $e");
+    }
 
     setState(() => _isLoading = false);
-    Navigator.of(context, rootNavigator: true).pop(true);
   }
 
   int get _passwordStrength {
@@ -413,6 +444,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 label: 'Google',
                 icon: Icons.g_mobiledata_rounded,
                 iconColor: const Color(0xFFDB4437),
+                onTap: () async {
+                  final auth.User? firebaseUser = await AuthService.signInWithGoogle();
+                  if (firebaseUser != null) {
+                    // Update Riverpod state
+                    ref.read(userProvider.notifier).state = User(
+                      name: firebaseUser.displayName ?? '',
+                      membership: 'Platinum Member',
+                      avatar: firebaseUser.photoURL,
+                    );
+
+                    // Close the register screen
+                    if (!mounted) return;
+                    Navigator.of(context, rootNavigator: true).pop(true);
+                  }
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -421,6 +467,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 label: 'Apple',
                 icon: Icons.apple_rounded,
                 iconColor: Colors.black87,
+                onTap: () async {
+                  // Apple sign in placeholder
+                },
               ),
             ),
           ],
@@ -930,29 +979,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     required String label,
     required IconData icon,
     required Color iconColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: _softWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: iconColor),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: _textDark,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: _softWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _textDark,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
