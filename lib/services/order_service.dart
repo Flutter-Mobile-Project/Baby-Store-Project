@@ -49,6 +49,11 @@ class OrderService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Increment ordersCount in user document
+      await _db.collection('users').doc(user.uid).update({
+        'ordersCount': FieldValue.increment(1),
+      });
+
       return null; // Success
     } catch (e) {
       print('Error placing order: $e');

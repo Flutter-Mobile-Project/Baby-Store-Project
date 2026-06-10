@@ -157,9 +157,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  Expanded(child: _buildStatCard('12', 'Orders')),
+                  Expanded(
+                    child: _buildStatCard(
+                      '${user?.ordersCount ?? 0}', 
+                      'Orders',
+                      onTap: () => Navigator.pushNamed(context, '/order-history'),
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard('850', 'Points')),
+                  Expanded(child: _buildStatCard('${user?.points ?? 0}', 'Points')),
                   const SizedBox(width: 12),
                   Expanded(child: _buildStatCard('1', 'Registry')),
                 ],
@@ -186,6 +192,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           iconBg: AppColors.mint,
                           iconColor: const Color(0xFF3182CE),
                           title: 'My Orders',
+                          onTap: () => Navigator.pushNamed(context, '/order-history'),
                         ),
                         _divider(),
                         _settingsItem(
@@ -227,8 +234,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.face_outlined,
                           iconBg: AppColors.babyPink,
                           iconColor: const Color(0xFFB83280),
-                          title: "Baby's Profile",
-                          subtitle: 'Leo Mitchell • 6 months',
+                          title: user?.babyName ?? "Baby's Profile",
+                          subtitle: _calculateBabyAge(user?.babyBirthday),
                         ),
                       ],
                     ),
@@ -326,34 +333,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildStatCard(String count, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.beige,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
-      ),
-      child: Column(
-        children: [
-          Text(
-            count,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+  String _calculateBabyAge(String? birthdayStr) {
+    if (birthdayStr == null) return 'Add your baby info';
+    try {
+      final birthday = DateTime.parse(birthdayStr);
+      final now = DateTime.now();
+      final difference = now.difference(birthday);
+
+      if (difference.inDays < 30) {
+        return '${difference.inDays} days old';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months months old';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years years old';
+      }
+    } catch (e) {
+      return 'Baby Profile';
+    }
+  }
+
+  Widget _buildStatCard(String count, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.beige,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+        ),
+        child: Column(
+          children: [
+            Text(
+              count,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -386,56 +417,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     String? subtitle,
     String? trailingText,
+    VoidCallback? onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: iconBg,
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: iconBg,
+              child: Icon(icon, size: 18, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    subtitle,
+                    title,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      color: AppColors.textPrimary,
                     ),
                   ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          if (trailingText != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Text(
-                trailingText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ),
-          Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
-        ],
+            if (trailingText != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  trailingText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+          ],
+        ),
       ),
     );
   }

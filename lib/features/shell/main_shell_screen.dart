@@ -1,5 +1,7 @@
 import 'package:baby_store_app/features/shell/app_shell.dart';
 import 'package:baby_store_app/features/shop/shop_screen.dart';
+import 'package:baby_store_app/services/auth_service.dart';
+import 'package:baby_store_app/state/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/home_screen.dart';
@@ -40,6 +42,25 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   List<Map<String, String>> _favorites = [];
   List<Map<String, dynamic>> _cartItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _syncUser();
+  }
+
+  Future<void> _syncUser() async {
+    // If we have a local session, fetch latest from Firestore
+    if (AuthService.isRegistered) {
+      final uid = AuthService.currentUid;
+      if (uid != null) {
+        final profile = await AuthService.getUserProfile(uid);
+        if (profile != null) {
+          ref.read(userProvider.notifier).state = profile;
+        }
+      }
+    }
+  }
 
   void _toggleFavorite(Map<String, String> item) {
     setState(() {
@@ -107,6 +128,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   }
 
   void _onOrderComplete() {
+    _syncUser(); // Refresh profile stats from Firestore
     setState(() {
       _cartItems = [];
       _selectedCoupon = null;

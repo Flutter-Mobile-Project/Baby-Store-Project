@@ -160,29 +160,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             password: _passwordController.text.trim(),
           );
 
-      auth.User? user = result.user;
+      auth.User? firebaseUser = result.user;
 
-      if (user != null) {
+      if (firebaseUser != null) {
         // Save extra info in Firestore using AuthService helper
         await AuthService.saveUserData(
-          uid: user.uid,
+          uid: firebaseUser.uid,
           name: _nameController.text.trim(),
-          email: user.email!,
+          email: firebaseUser.email!,
           birthday: _selectedDate?.toIso8601String(),
         );
+
+        // Fetch full profile
+        final userProfile = await AuthService.getUserProfile(firebaseUser.uid);
 
         // Save to local storage for session management
         await AuthService.register(
           name: _nameController.text.trim(),
-          email: user.email!,
+          email: firebaseUser.email!,
         );
 
         // Update Riverpod state
-        ref.read(userProvider.notifier).state = User(
-          name: _nameController.text.trim(),
-          membership: 'Platinum Member',
-        );
+        ref.read(userProvider.notifier).state = userProfile;
 
+        if (!mounted) return;
         Navigator.of(context, rootNavigator: true).pop(true);
       }
     } catch (e) {
@@ -445,14 +446,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 icon: Icons.g_mobiledata_rounded,
                 iconColor: const Color(0xFFDB4437),
                 onTap: () async {
-                  final auth.User? firebaseUser = await AuthService.signInWithGoogle();
-                  if (firebaseUser != null) {
+                  final profile = await AuthService.signInWithGoogle();
+                  if (profile != null) {
                     // Update Riverpod state
-                    ref.read(userProvider.notifier).state = User(
-                      name: firebaseUser.displayName ?? '',
-                      membership: 'Platinum Member',
-                      avatar: firebaseUser.photoURL,
-                    );
+                    ref.read(userProvider.notifier).state = profile;
 
                     // Close the register screen
                     if (!mounted) return;

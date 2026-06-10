@@ -1,3 +1,4 @@
+import 'package:baby_store_app/models/user.dart' as model;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -19,6 +20,20 @@ class AuthService {
   static const String _keyUserName = 'auth_user_name';
   static const String _keyUserEmail = 'auth_user_email';
 
+  // ── Get User Profile from Firestore ─────────────────────────────
+  static Future<model.User?> getUserProfile(String uid) async {
+    try {
+      final doc = await _db.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return model.User.fromFirestore(uid, doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      return null;
+    }
+  }
+
   // ── Save User Data to Firestore ─────────────────────────────────
   static Future<void> saveUserData({
     required String uid,
@@ -26,19 +41,33 @@ class AuthService {
     required String email,
     String? avatar,
     String? birthday,
+    String? babyName,
   }) async {
-    await _db.collection('users').doc(uid).set({
+    final userRef = _db.collection('users').doc(uid);
+    final doc = await userRef.get();
+
+    final data = {
       'name': name,
       'email': email,
       'avatar': avatar,
       'birthday': birthday,
+      'babyName': babyName,
       'membership': 'Platinum Member',
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    // Only set default stats if it's a brand new user
+    if (!doc.exists) {
+      data['points'] = 850;
+      data['ordersCount'] = 0;
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await userRef.set(data, SetOptions(merge: true));
   }
 
   // ── Google Sign In ──────────────────────────────────────────────
-  static Future<User?> signInWithGoogle() async {
+  static Future<model.User?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
@@ -53,22 +82,29 @@ class AuthService {
       final User? user = userCredential.user;
 
       if (user != null) {
-        // ✅ Save to Firestore
-        await saveUserData(
-          uid: user.uid,
-          name: user.displayName ?? 'Google User',
-          email: user.email ?? '',
-          avatar: user.photoURL,
-        );
+        // Check if user exists, if not save them
+        final existingProfile = await getUserProfile(user.uid);
+        if (existingProfile == null) {
+          await saveUserData(
+            uid: user.uid,
+            name: user.displayName ?? 'Google User',
+            email: user.email ?? '',
+            avatar: user.photoURL,
+          );
+        }
 
-        // Save to SharedPreferences
-        await register(
-          name: user.displayName ?? 'Google User',
-          email: user.email ?? '',
-        );
+        // Fetch final profile
+        final profile = await getUserProfile(user.uid);
+
+        // Save to SharedPreferences for fast sync
+        if (profile != null) {
+          await register(name: profile.name, email: profile.email);
+        }
+        
+        return profile;
       }
 
-      return user;
+      return null;
     } catch (e) {
       print('Error signing in with Google: $e');
       return null;
@@ -122,4 +158,5 @@ class AuthService {
 
   static String? get userName => _userName;
   static String? get userEmail => _userEmail;
+  static String? get currentUid => _auth.currentUser?.uid;
 }
