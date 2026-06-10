@@ -11,6 +11,7 @@ import '../chat/chat_screen.dart';
 import '../map/map_screen.dart';
 import '../promotions/promotions_screen.dart';
 import '../cart/cart_screen.dart';
+import '../cart/checkout_screen.dart';
 
 // Tab index constants
 const int tabHome = 0;
@@ -23,6 +24,7 @@ const int tabBooking = 6;
 const int tabChat = 7;
 const int tabMap = 8;
 const int tabPromotions = 9;
+const int tabCheckout = 10;
 
 class MainShellScreen extends ConsumerStatefulWidget {
   const MainShellScreen({super.key});
@@ -34,6 +36,7 @@ class MainShellScreen extends ConsumerStatefulWidget {
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   int _selectedIndex = tabHome;
   String? _selectedCoupon;
+  double _discountAmount = 0;
 
   List<Map<String, String>> _favorites = [];
   List<Map<String, dynamic>> _cartItems = [];
@@ -50,8 +53,30 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   }
 
   void _applyCoupon(String code) {
+    const coupons = {
+      'WELCOME20': {'type': 'percentage', 'value': 20},
+      'WHEELS50': {'type': 'fixed', 'value': 50},
+      'B3G1FREE': {'type': 'percentage', 'value': 25},
+    };
+
+    final coupon = coupons[code];
+
+    double discount = 0;
+
+    if (coupon != null) {
+      final subtotal = _cartItems.fold<double>(
+        0,
+        (sum, item) => sum + ((item['price'] ?? 0) * (item['qty'] ?? 1)),
+      );
+
+      discount = coupon['type'] == 'percentage'
+          ? subtotal * (coupon['value'] as double) / 100
+          : (coupon['value'] as num).toDouble();
+    }
+
     setState(() {
       _selectedCoupon = code;
+      _discountAmount = discount;
       _selectedIndex = tabCart;
     });
   }
@@ -59,7 +84,9 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   void _moveToCart(List<Map<String, dynamic>> items) {
     setState(() {
       for (final item in items) {
-        final existing = _cartItems.indexWhere((e) => e['title'] == item['title']);
+        final existing = _cartItems.indexWhere(
+          (e) => e['title'] == item['title'],
+        );
         if (existing != -1) {
           _cartItems[existing]['qty'] += item['qty'] ?? 1;
         } else {
@@ -81,37 +108,44 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   // ✅ This is the ONLY _pages getter you need
   List<Widget> get _pages => [
-        HomeBody(
-          favorites: _favorites,
-          onToggleFavorite: _toggleFavorite,
-          onAddToCart: _moveToCart,
-        ), // 0
-        ShopScreen(
-          favoriteItems: _favorites,
-          onToggleFavorite: _toggleFavorite,
-          onAddToCart: _moveToCart,
-        ), // 1
-        FavoritesScreen(
-          favoriteItems: _favorites,
-          onFavoritesUpdated: () => setState(() {}),
-          onMoveToCart: _moveToCart,
-        ), // 2
-        SettingsScreen(onLogout: _onLogout), // 3
-        CartScreen(
-          cartItems: _cartItems,
-          favorites: _favorites,
-          couponCode: _selectedCoupon,
-          isTab: true,
-          onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
-        ), // 4
-        NearbyScreen(
-          onNavigate: (i) => setState(() => _selectedIndex = i),
-        ), // 5
-        const BookingScreen(), // 6
-        const ChatScreen(), // 7
-        const MapScreen(), // 8
-        PromotionsScreen(onCouponApplied: _applyCoupon), // 9
-      ];
+    HomeBody(
+      favorites: _favorites,
+      onToggleFavorite: _toggleFavorite,
+      onAddToCart: _moveToCart,
+    ), // 0
+    ShopScreen(
+      favoriteItems: _favorites,
+      onToggleFavorite: _toggleFavorite,
+      onAddToCart: _moveToCart,
+    ), // 1
+    FavoritesScreen(
+      favoriteItems: _favorites,
+      onFavoritesUpdated: () => setState(() {}),
+      onMoveToCart: _moveToCart,
+    ), // 2
+    SettingsScreen(onLogout: _onLogout), // 3
+    CartScreen(
+      cartItems: _cartItems,
+      favorites: _favorites,
+      couponCode: _selectedCoupon,
+      isTab: true,
+      onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
+    ), // 4
+    NearbyScreen(onNavigate: (i) => setState(() => _selectedIndex = i)), // 5
+    const BookingScreen(), // 6
+    const ChatScreen(), // 7
+    const MapScreen(), // 8
+    PromotionsScreen(onCouponApplied: _applyCoupon), // 9
+    CheckoutScreen(
+      cartItems: _cartItems,
+      total: _cartItems.fold(
+        0,
+        (sum, item) => sum + ((item['price'] ?? 0) * (item['qty'] ?? 1)),
+      ),
+      discountAmount: _discountAmount,
+      isTab: true,
+    ), // 10
+  ];
 
   @override
   Widget build(BuildContext context) {

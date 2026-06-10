@@ -39,13 +39,7 @@ class _CartScreenState extends State<CartScreen> {
   };
 
   void _goToCheckout() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CheckoutScreen(cartItems: cartItems, total: total),
-      ),
-    );
+    widget.onNavigate?.call(tabCheckout);
   }
 
   @override
