@@ -324,10 +324,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                     onPressed: () {
-                      // 2. Logic: Print or save to your Global Cart list
-                      print(
-                        "Added to cart: $_selectedColor, $_selectedSize, Qty: $_quantity",
-                      );
+                      final cartItem = {
+                        'title': widget.product?['title'] ??
+                            'Organic Cotton Sleepsuit',
+                        'price': widget.product?['price'] != null
+                            ? double.parse(
+                              widget.product!['price']
+                                  .toString()
+                                  .replaceAll('\$', '')
+                                  .trim(),
+                            )
+                            : 24.0,
+                        'image': widget.product?['image'] ??
+                            'assets/images/product/img2.png',
+                        'qty': _quantity,
+                        'color': _selectedColor,
+                        'size': _selectedSize,
+                      };
+
+                      widget.onAddToCart([cartItem]);
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

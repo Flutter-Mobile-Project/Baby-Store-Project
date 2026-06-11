@@ -6,7 +6,7 @@ class OrderService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ── Place Order to Firestore ────────────────────────────────────
-  static Future<String?> placeOrder({
+  static Future<Map<String, dynamic>> placeOrder({
     required List<Map<String, dynamic>> items,
     required double subtotal,
     required double discount,
@@ -18,13 +18,14 @@ class OrderService {
   }) async {
     try {
       final User? user = _auth.currentUser;
-      if (user == null) return 'User not logged in';
+      if (user == null) return {'error': 'User not logged in'};
 
       // Create the order document
       final orderRef = _db.collection('orders').doc();
+      final orderId = orderRef.id;
       
       await orderRef.set({
-        'orderId': orderRef.id,
+        'orderId': orderId,
         'userId': user.uid,
         'userEmail': user.email,
         'fullName': fullName,
@@ -42,8 +43,8 @@ class OrderService {
       });
 
       // Also add to a user-specific sub-collection for easy lookup
-      await _db.collection('users').doc(user.uid).collection('my_orders').doc(orderRef.id).set({
-        'orderId': orderRef.id,
+      await _db.collection('users').doc(user.uid).collection('my_orders').doc(orderId).set({
+        'orderId': orderId,
         'total': total,
         'status': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
@@ -54,10 +55,10 @@ class OrderService {
         'ordersCount': FieldValue.increment(1),
       });
 
-      return null; // Success
+      return {'orderId': orderId}; // Success
     } catch (e) {
       print('Error placing order: $e');
-      return e.toString();
+      return {'error': e.toString()};
     }
   }
 

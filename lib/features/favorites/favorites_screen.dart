@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
-import '../cart/cart_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
   final VoidCallback? onFavoritesUpdated;
-  final void Function(List<Map<String, dynamic>>)? onMoveToCart; // ✅ new
+  final void Function(List<Map<String, dynamic>>)? onMoveToCart;
+  final void Function(int)? onNavigate;
 
   const FavoritesScreen({
     super.key,
     required this.favoriteItems,
     this.onFavoritesUpdated,
-    this.onMoveToCart, // ✅ new
+    this.onMoveToCart,
+    this.onNavigate,
   });
 
   @override
@@ -19,8 +20,6 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  List<Map<String, dynamic>> cartItems = [];
-
   @override
   Widget build(BuildContext context) {
     final favorites = widget.favoriteItems;
@@ -237,12 +236,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CartScreen(cartItems: cartItems),
-                  ),
-                );
+                // ✅ Switch to Cart Tab (Index 4)
+                widget.onNavigate?.call(4);
               },
               icon: const Icon(
                 Icons.shopping_cart_outlined,
