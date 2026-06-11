@@ -391,9 +391,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 tween: Tween(begin: 0, end: 1),
                 curve: Curves.easeOutBack,
                 builder: (context, value, child) {
+                  // Curve (easeOutBack) may overshoot >1. Clamp opacity to [0,1]
+                  final double clamped = value.clamp(0.0, 1.0).toDouble();
                   return Transform.scale(
                     scale: value,
-                    child: Opacity(opacity: value, child: child),
+                    child: Opacity(opacity: clamped, child: child),
                   );
                 },
                 child: Container(

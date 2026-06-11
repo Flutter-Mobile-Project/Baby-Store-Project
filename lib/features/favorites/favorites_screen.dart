@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../cart/cart_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
@@ -238,8 +239,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               onPressed: () {
-                // ✅ Switch to Cart Tab (Index 4)
-                widget.onNavigate?.call(4);
+                // Navigate to the CartScreen, passing current favorites
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CartScreen(
+                      cartItems: [],
+                      favorites: widget.favoriteItems,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(
                 Icons.shopping_cart_outlined,
