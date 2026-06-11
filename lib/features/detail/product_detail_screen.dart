@@ -4,11 +4,15 @@ import '../../theme/app_colors.dart';
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
   final Function(List<Map<String, dynamic>>) onAddToCart;
+  final List<Map<String, dynamic>>? favoriteItems;
+  final Function(Map<String, String>)? onToggleFavorite;
 
   const ProductDetailsScreen({
     super.key,
     this.product,
     required this.onAddToCart,
+    this.favoriteItems,
+    this.onToggleFavorite,
   });
 
   @override
@@ -49,6 +53,39 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  bool get _isFavorite {
+    final title = widget.product?['title']?.toString();
+    if (title == null || widget.favoriteItems == null) return false;
+    return widget.favoriteItems!.any((item) => item['title'] == title);
+  }
+
+  void _handleToggleFavorite() {
+    final title = widget.product?['title']?.toString();
+    if (title == null || widget.onToggleFavorite == null) return;
+
+    final isSaved = _isFavorite;
+    final item = {
+      'title': title,
+      'category': widget.product?['category']?.toString() ?? '',
+      'price': widget.product?['price']?.toString() ?? '',
+      'image': widget.product?['image']?.toString() ?? '',
+    };
+
+    widget.onToggleFavorite!(item);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isSaved ? 'Removed from Favorites' : 'Added to Favorites ❤️',
+          style: const TextStyle(fontFamily: 'Nunito'),
+        ),
+        backgroundColor: isSaved ? Colors.redAccent : AppColors.mint,
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,12 +94,19 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         backgroundColor: AppColors.cream,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.shopping_cart_outlined,
+              color: AppColors.textPrimary,
+            ),
             onPressed: _handleAddToCart,
           ),
         ],
@@ -286,20 +330,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             children: [
               // --- SMART HEART BUTTON ---
               GestureDetector(
-                onTap: () {
-                  // 1. Show feedback popup without navigating away
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Added to Favorites ❤️',
-                        style: TextStyle(fontFamily: 'Nunito'),
-                      ),
-                      backgroundColor: AppColors.mint,
-                      duration: Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onTap: _handleToggleFavorite,
                 child: Container(
                   height: 56,
                   width: 56,
@@ -307,7 +338,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     border: Border.all(color: AppColors.textPrimary),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.favorite_border),
+                  child: Icon(
+                    _isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: _isFavorite
+                        ? Colors.redAccent
+                        : AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),

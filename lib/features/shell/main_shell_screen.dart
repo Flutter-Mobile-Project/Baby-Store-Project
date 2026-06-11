@@ -1,12 +1,16 @@
 import 'package:baby_store_app/features/shell/app_shell.dart';
 import 'package:baby_store_app/features/shop/shop_screen.dart';
+import 'dart:async';
+
 import 'package:baby_store_app/services/auth_service.dart';
+import 'package:baby_store_app/services/favorites_service.dart';
 import 'package:baby_store_app/state/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../settings/settings_screen.dart';
+import '../shop/order_history_screen.dart';
 import '../nearby/nearby_screen.dart';
 import '../booking/booking_screen.dart';
 import '../chat/chat_screen.dart';
@@ -15,7 +19,7 @@ import '../promotions/promotions_screen.dart';
 import '../cart/cart_screen.dart';
 import '../cart/checkout_screen.dart';
 
-// Tab index constants
+// ── Tab index constants ────────────────────────────────────────────
 const int tabHome = 0;
 const int tabShop = 1;
 const int tabFavorites = 2;
@@ -27,18 +31,23 @@ const int tabChat = 7;
 const int tabMap = 8;
 const int tabPromotions = 9;
 const int tabCheckout = 10;
+const int tabOrderHistory = 11;
+// ✅ OrderHistoryScreen is now managed by the shell instead of a standalone pushed route
 
 class MainShellScreen extends ConsumerStatefulWidget {
-  const MainShellScreen({super.key});
+  final int initialIndex;
+
+  const MainShellScreen({super.key, this.initialIndex = tabHome});
 
   @override
   ConsumerState<MainShellScreen> createState() => _MainShellScreenState();
 }
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
-  int _selectedIndex = tabHome;
+  late int _selectedIndex;
   String? _selectedCoupon;
   double _discountAmount = 0;
+  StreamSubscription<List<Map<String, String>>>? _favoritesSubscription;
 
   List<Map<String, String>> _favorites = [];
   List<Map<String, dynamic>> _cartItems = [];
@@ -46,31 +55,75 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     _syncUser();
   }
 
+  @override
+  void dispose() {
+    _favoritesSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> _syncUser() async {
-    // If we have a local session, fetch latest from Firestore
-    if (AuthService.isRegistered) {
-      final uid = AuthService.currentUid;
-      if (uid != null) {
-        final profile = await AuthService.getUserProfile(uid);
-        if (profile != null) {
-          ref.read(userProvider.notifier).state = profile;
-        }
-      }
+    final uid = AuthService.currentUid;
+    if (uid == null) return;
+
+    final profile = await AuthService.getUserProfile(uid);
+    if (profile != null && mounted) {
+      ref.read(userProvider.notifier).state = profile;
     }
+
+    _startFavoriteSync(uid);
+  }
+
+  void _startFavoriteSync(String uid) {
+    _favoritesSubscription?.cancel();
+    _favoritesSubscription = FavoritesService.favoritesStream(uid).listen(
+      (favorites) {
+        if (!mounted) return;
+        setState(() {
+          _favorites = favorites;
+        });
+      },
+      onError: (error) {
+        debugPrint('Favorites listener error: $error');
+      },
+    );
   }
 
   void _toggleFavorite(Map<String, String> item) {
+    final uid = AuthService.currentUid;
+    final title = item['title'] ?? '';
+    final exists = _favorites.any((e) => e['title'] == title);
+
     setState(() {
-      final exists = _favorites.any((e) => e['title'] == item['title']);
       if (exists) {
-        _favorites.removeWhere((e) => e['title'] == item['title']);
+        _favorites.removeWhere((e) => e['title'] == title);
       } else {
         _favorites.add(item);
       }
     });
+
+    if (uid != null && title.isNotEmpty) {
+      _syncFavoriteToBackend(uid, item, exists);
+    }
+  }
+
+  Future<void> _syncFavoriteToBackend(
+    String uid,
+    Map<String, String> item,
+    bool exists,
+  ) async {
+    try {
+      if (exists) {
+        await FavoritesService.removeFavorite(uid, item['title']!);
+      } else {
+        await FavoritesService.addFavorite(uid, item);
+      }
+    } catch (e) {
+      debugPrint('Error syncing favorite: $e');
+    }
   }
 
   void _applyCoupon(String code) {
@@ -81,7 +134,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     };
 
     final coupon = coupons[code];
-
     double discount = 0;
 
     if (coupon != null) {
@@ -89,10 +141,11 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         0,
         (sum, item) => sum + ((item['price'] ?? 0) * (item['qty'] ?? 1)),
       );
-
+      // ✅ Fixed — cast as num not double
+      final value = (coupon['value'] as num).toDouble();
       discount = coupon['type'] == 'percentage'
-          ? subtotal * (coupon['value'] as double) / 100
-          : (coupon['value'] as num).toDouble();
+          ? subtotal * value / 100
+          : value;
     }
 
     setState(() {
@@ -119,16 +172,20 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   }
 
   void _onLogout() {
+    _favoritesSubscription?.cancel();
+    _favoritesSubscription = null;
+
     setState(() {
       _selectedIndex = tabHome;
       _cartItems = [];
       _favorites = [];
       _selectedCoupon = null;
+      _discountAmount = 0;
     });
   }
 
   void _onOrderComplete() {
-    _syncUser(); // Refresh profile stats from Firestore
+    _syncUser();
     setState(() {
       _cartItems = [];
       _selectedCoupon = null;
@@ -137,37 +194,51 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     });
   }
 
-  // ✅ This is the ONLY _pages getter you need
   List<Widget> get _pages => [
     HomeBody(
+      // 0
       favorites: _favorites,
       onToggleFavorite: _toggleFavorite,
       onAddToCart: _moveToCart,
-    ), // 0
+    ),
     ShopScreen(
+      // 1
       favoriteItems: _favorites,
       onToggleFavorite: _toggleFavorite,
       onAddToCart: _moveToCart,
-    ), // 1
+    ),
     FavoritesScreen(
+      // 2
       favoriteItems: _favorites,
       onFavoritesUpdated: () => setState(() {}),
       onMoveToCart: _moveToCart,
-    ), // 2
-    SettingsScreen(onLogout: _onLogout), // 3
+      onRemoveFavorite: _toggleFavorite,
+    ),
+    SettingsScreen(
+      onLogout: _onLogout,
+      onOrderHistoryTap: () => setState(() => _selectedIndex = tabOrderHistory),
+    ), // 3
     CartScreen(
+      // 4
       cartItems: _cartItems,
       favorites: _favorites,
       couponCode: _selectedCoupon,
       isTab: true,
-      onNavigate: (tabIndex) => setState(() => _selectedIndex = tabIndex),
-    ), // 4
-    NearbyScreen(onNavigate: (i) => setState(() => _selectedIndex = i)), // 5
-    const BookingScreen(), // 6
+      onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
+    NearbyScreen(
+      // 5
+      onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
+    BookingScreen(
+      // 6 ✅ onNavigate added
+      onNavigate: (i) => setState(() => _selectedIndex = i),
+    ),
     const ChatScreen(), // 7
     const MapScreen(), // 8
     PromotionsScreen(onCouponApplied: _applyCoupon), // 9
     CheckoutScreen(
+      // 10
       cartItems: _cartItems,
       total: _cartItems.fold(
         0,
@@ -176,7 +247,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       discountAmount: _discountAmount,
       isTab: true,
       onOrderComplete: _onOrderComplete,
-    ), // 10
+    ),
+    const OrderHistoryScreen(),
   ];
 
   @override

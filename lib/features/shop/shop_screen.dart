@@ -155,8 +155,9 @@ class _ShopScreenState extends State<ShopScreen> {
                             'image': product.image,
                             'category': product.brand,
                           },
-                          onAddToCart: widget
-                              .onAddToCart, // <--- This connects the bridge
+                          onAddToCart: widget.onAddToCart,
+                          favoriteItems: widget.favoriteItems,
+                          onToggleFavorite: widget.onToggleFavorite,
                         ),
                       ),
                     );

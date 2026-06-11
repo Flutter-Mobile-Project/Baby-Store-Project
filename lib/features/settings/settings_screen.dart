@@ -6,8 +6,9 @@ import 'package:baby_store_app/state/user_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onLogout;
+  final VoidCallback? onOrderHistoryTap;
 
-  const SettingsScreen({super.key, this.onLogout});
+  const SettingsScreen({super.key, this.onLogout, this.onOrderHistoryTap});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -81,7 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 26),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -159,13 +160,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 children: [
                   Expanded(
                     child: _buildStatCard(
-                      '${user?.ordersCount ?? 0}', 
+                      '${user?.ordersCount ?? 0}',
                       'Orders',
-                      onTap: () => Navigator.pushNamed(context, '/order-history'),
+                      onTap: widget.onOrderHistoryTap,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard('${user?.points ?? 0}', 'Points')),
+                  Expanded(
+                    child: _buildStatCard('${user?.points ?? 0}', 'Points'),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(child: _buildStatCard('1', 'Registry')),
                 ],
@@ -187,12 +190,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     child: Column(
                       children: [
+                        // In _settingsItem for My Orders — add onTap:
                         _settingsItem(
                           icon: Icons.layers_outlined,
                           iconBg: AppColors.mint,
                           iconColor: const Color(0xFF3182CE),
                           title: 'My Orders',
-                          onTap: () => Navigator.pushNamed(context, '/order-history'),
+                          onTap: widget.onOrderHistoryTap,
                         ),
                         _divider(),
                         _settingsItem(
@@ -257,7 +261,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Text('Sign Out'),
-                            content: const Text('Are you sure you want to sign out?'),
+                            content: const Text(
+                              'Are you sure you want to sign out?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, false),
@@ -265,7 +271,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                                child: const Text(
+                                  'Sign Out',
+                                  style: TextStyle(color: Colors.red),
+                                ),
                               ),
                             ],
                           ),
@@ -280,10 +289,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             if (!mounted) return;
 
                             // Force a full app reset by navigating to the root and clearing the stack
-                            Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                              '/', 
-                              (route) => false,
-                            );
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamedAndRemoveUntil('/', (route) => false);
                           } finally {
                             if (mounted) setState(() => _isLoggingOut = false);
                           }
@@ -296,31 +305,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: AppColors.logoutBg,
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        child: _isLoggingOut 
-                          ? const SizedBox(
-                              height: 20, 
-                              width: 20, 
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.logoutText)
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.logout,
+                        child: _isLoggingOut
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                   color: AppColors.logoutText,
-                                  size: 20,
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Sign Out',
-                                  style: TextStyle(
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.logout,
                                     color: AppColors.logoutText,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
-                            ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Sign Out',
+                                    style: TextStyle(
+                                      color: AppColors.logoutText,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                   const SizedBox(height: 40),
@@ -468,7 +480,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Colors.grey.shade400,
+            ),
           ],
         ),
       ),

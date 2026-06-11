@@ -5,14 +5,14 @@ class FavoritesScreen extends StatefulWidget {
   final List<Map<String, String>> favoriteItems;
   final VoidCallback? onFavoritesUpdated;
   final void Function(List<Map<String, dynamic>>)? onMoveToCart;
-  final void Function(int)? onNavigate;
+  final void Function(Map<String, String>)? onRemoveFavorite;
 
   const FavoritesScreen({
     super.key,
     required this.favoriteItems,
     this.onFavoritesUpdated,
     this.onMoveToCart,
-    this.onNavigate,
+    this.onRemoveFavorite,
   });
 
   @override
@@ -54,9 +54,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              ...favorites
-                  .map((item) => _buildFavoriteCard(context, item))
-                  .toList(),
+              ...favorites.map((item) => _buildFavoriteCard(context, item)),
             ],
           );
   }
@@ -89,10 +87,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 right: 10,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      widget.favoriteItems.remove(item);
-                    });
-                    widget.onFavoritesUpdated?.call();
+                    if (widget.onRemoveFavorite != null) {
+                      widget.onRemoveFavorite!(item);
+                    } else {
+                      setState(() {
+                        widget.favoriteItems.remove(item);
+                      });
+                      widget.onFavoritesUpdated?.call();
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.all(6),

@@ -64,12 +64,19 @@ class OrderService {
 
   // ── Get User Orders ─────────────────────────────────────────────
   static Stream<QuerySnapshot> getUserOrders() {
-    final User? user = _auth.currentUser;
-    if (user == null) return const Stream.empty();
+    // We use authStateChanges to ensure that if the user state isn't ready yet,
+    // the stream will update once the user is authenticated.
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return const Stream.empty();
+      }
 
-    return _db.collection('orders')
-        .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
+      // Query the top-level 'orders' collection for this user.
+      // NOTE: This query REQUIRES a composite index in Firestore:
+      // Collection: orders, Fields: userId (Ascending), createdAt (Descending)
+      return _db.collection('orders')
+          .where('userId', isEqualTo: user.uid)
+          .snapshots();
+    });
   }
 }

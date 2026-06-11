@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../features/shell/main_shell_screen.dart';
-import '../features/shop/order_history_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -9,7 +8,9 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const MainShellScreen());
 
       case '/order-history':
-        return MaterialPageRoute(builder: (_) => const OrderHistoryScreen());
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: tabOrderHistory),
+        );
 
       default:
         return MaterialPageRoute(
