@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 
 class TopBanner extends StatelessWidget {
-  const TopBanner({super.key});
+  final VoidCallback onShopNow;
+  const TopBanner({super.key, required this.onShopNow});
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,7 @@ class TopBanner extends StatelessWidget {
                   ),
                   const Spacer(),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: onShopNow,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5C7282),
                       foregroundColor: Colors.white,

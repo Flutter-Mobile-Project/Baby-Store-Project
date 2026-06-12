@@ -1,18 +1,21 @@
 import 'package:baby_store_app/data/mock_product.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
-import '../detail/product_detail_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   final List<Map<String, dynamic>> favoriteItems;
   final Function(Map<String, String>) onToggleFavorite;
   final Function(List<Map<String, dynamic>>) onAddToCart;
-
+  final Function(Map<String, dynamic>) onViewProduct; // <-- ADDED THIS
+  final String selectedCategory;
+  
   const ShopScreen({
     super.key,
     required this.favoriteItems,
     required this.onToggleFavorite,
     required this.onAddToCart,
+    required this.onViewProduct, // <-- ADDED THIS
+    this.selectedCategory = 'All',
   });
 
   @override
@@ -22,6 +25,9 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
+  late String _activeCategory; // Use this for the dropdown
+
+  final List<String> _categories = ['All', 'Soft Clothing', 'Safe Toys', 'Feeding', 'Gear', 'Nursery'];
 
   List get _filteredProducts {
     List filtered = products.where((product) {
@@ -144,23 +150,14 @@ class _ShopScreenState extends State<ShopScreen> {
 
                 return GestureDetector(
                   onTap: () {
-                    // ✅ FIXED: Pass the real onAddToCart function here
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductDetailsScreen(
-                          product: {
-                            'title': product.title,
-                            'price': '\$${product.price.toStringAsFixed(2)}',
-                            'image': product.image,
-                            'category': product.brand,
-                          },
-                          onAddToCart: widget.onAddToCart,
-                          favoriteItems: widget.favoriteItems,
-                          onToggleFavorite: widget.onToggleFavorite,
-                        ),
-                      ),
-                    );
+                    // THE FIX IS HERE! No more Navigator.push!
+                    // This opens the product detail but keeps the footer at the bottom!
+                    widget.onViewProduct({
+                      'title': product.title,
+                      'price': '\$${product.price.toStringAsFixed(2)}',
+                      'image': product.image,
+                      'category': product.brand,
+                    });
                   },
                   child: Container(
                     padding: const EdgeInsets.all(10),

@@ -6,6 +6,7 @@ class ProductDetailsScreen extends StatefulWidget {
   final Function(List<Map<String, dynamic>>) onAddToCart;
   final List<Map<String, dynamic>>? favoriteItems;
   final Function(Map<String, String>)? onToggleFavorite;
+  final VoidCallback? onBack;
 
   const ProductDetailsScreen({
     super.key,
@@ -13,6 +14,7 @@ class ProductDetailsScreen extends StatefulWidget {
     required this.onAddToCart,
     this.favoriteItems,
     this.onToggleFavorite,
+    this.onBack,
   });
 
   @override
@@ -88,324 +90,341 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: AppColors.cream,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.textPrimary,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.shopping_cart_outlined,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: _handleAddToCart,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    // We use Material to provide the cream background without blocking the AppShell!
+    return Material(
+      color: AppColors.cream,
+      child: Column(
         children: [
-          // IMAGE SECTION
-          Stack(
-            children: [
-              Container(
-                height: 380,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  image: DecorationImage(
-                    image: AssetImage(_colorImages[_selectedColor]!),
-                    fit: BoxFit.cover,
+          // 1. CUSTOM TOP BAR (Replaces the old Scaffold AppBar)
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 4.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: AppColors.textPrimary,
+                      size: 20,
+                    ),
+                    onPressed:
+                        widget.onBack ??
+                        () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        },
                   ),
-                ),
-              ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: CircleAvatar(
-                  backgroundColor: Colors.white.withOpacity(0.9),
-                  radius: 20,
-                  child: const Icon(
-                    Icons.zoom_in,
-                    color: AppColors.textPrimary,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
 
-          // REVIEWS & TITLE
-          Row(
-            children: [
-              Row(
-                children: List.generate(
-                  5,
-                  (index) => const Icon(
-                    Icons.star,
-                    color: Color(0xFFFFD700),
-                    size: 16,
-                  ),
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Text(
-                '(124 Reviews)',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Organic Cotton Sleepsuit',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
 
-          // PRICE
-          Row(
-            children: [
-              const Text(
-                '\$24.00',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '\$35.00',
-                style: TextStyle(
-                  fontSize: 16,
-                  decoration: TextDecoration.lineThrough,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // COLOR SELECTION
-          Text(
-            'COLOR: ${_selectedColor.toUpperCase()}',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildColorSelector(AppColors.babyPink, 'Pink'),
-              const SizedBox(width: 12),
-              _buildColorSelector(AppColors.mint, 'Mint'),
-              const SizedBox(width: 12),
-              _buildColorSelector(AppColors.babyBlue, 'Blue'),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // SIZE SELECTION
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                'SIZE SELECTION',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'Size Guide',
-                style: TextStyle(decoration: TextDecoration.underline),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              '0-3M',
-              '3-6M',
-              '6-9M',
-              '9-12M',
-            ].map((s) => _buildSizePill(s)).toList(),
-          ),
-          const SizedBox(height: 24),
-
-          // QUANTITY
-          const Text(
-            'QUANTITY',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: 120,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.beige,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 2. MAIN SCROLLABLE CONTENT
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               children: [
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _quantity > 1 ? _quantity-- : null),
-                  child: const Icon(Icons.remove, size: 20),
-                ),
-                Text(
-                  '$_quantity',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => setState(() => _quantity++),
-                  child: const Icon(Icons.add, size: 20),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // TAGS
-          Row(
-            children: [
-              Expanded(
-                child: _buildTag(
-                  AppColors.mint,
-                  Icons.eco_outlined,
-                  '100% GOTS\nCotton',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTag(
-                  AppColors.babyPink,
-                  Icons.water_drop_outlined,
-                  'Machine\nWashable',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.cream,
-          border: Border(top: BorderSide(color: Colors.grey.shade300)),
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              // --- SMART HEART BUTTON ---
-              GestureDetector(
-                onTap: _handleToggleFavorite,
-                child: Container(
-                  height: 56,
-                  width: 56,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.textPrimary),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: _isFavorite
-                        ? Colors.redAccent
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // --- ADD TO CART BUTTON ---
-              Expanded(
-                child: SizedBox(
-                  height: 56,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF556672),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
+                Stack(
+                  children: [
+                    Container(
+                      height: 380,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(32),
+                        image: DecorationImage(
+                          image: AssetImage(_colorImages[_selectedColor]!),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                    onPressed: () {
-                      final cartItem = {
-                        'title': widget.product?['title'] ??
-                            'Organic Cotton Sleepsuit',
-                        'price': widget.product?['price'] != null
-                            ? double.parse(
-                              widget.product!['price']
-                                  .toString()
-                                  .replaceAll('\$', '')
-                                  .trim(),
-                            )
-                            : 24.0,
-                        'image': widget.product?['image'] ??
-                            'assets/images/product/img2.png',
-                        'qty': _quantity,
-                        'color': _selectedColor,
-                        'size': _selectedSize,
-                      };
-
-                      widget.onAddToCart([cartItem]);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Added to Cart! 🛍️',
-                            style: TextStyle(fontFamily: 'Nunito'),
-                          ),
-                          backgroundColor: Color(0xFF556672),
-                          duration: Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(0.9),
+                        radius: 20,
+                        child: const Icon(
+                          Icons.zoom_in,
+                          color: AppColors.textPrimary,
+                          size: 20,
                         ),
-                      );
-                    },
-                    child: const Text(
-                      'Add to Cart',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Row(
+                      children: List.generate(
+                        5,
+                        (index) => const Icon(
+                          Icons.star,
+                          color: Color(0xFFFFD700),
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '(124 Reviews)',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                        fontFamily: 'Nunito',
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Organic Cotton Sleepsuit',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    const Text(
+                      '\$24.00',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '\$35.00',
+                      style: TextStyle(
+                        fontSize: 16,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                Text(
+                  'COLOR: ${_selectedColor.toUpperCase()}',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildColorSelector(AppColors.babyPink, 'Pink'),
+                    const SizedBox(width: 12),
+                    _buildColorSelector(AppColors.mint, 'Mint'),
+                    const SizedBox(width: 12),
+                    _buildColorSelector(AppColors.babyBlue, 'Blue'),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      'SIZE SELECTION',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Size Guide',
+                      style: TextStyle(decoration: TextDecoration.underline),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    '0-3M',
+                    '3-6M',
+                    '6-9M',
+                    '9-12M',
+                  ].map((s) => _buildSizePill(s)).toList(),
+                ),
+                const SizedBox(height: 24),
+
+                const Text(
+                  'QUANTITY',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: 120,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.beige,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _quantity > 1 ? _quantity-- : null),
+                        child: const Icon(Icons.remove, size: 20),
+                      ),
+                      Text(
+                        '$_quantity',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _quantity++),
+                        child: const Icon(Icons.add, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTag(
+                        AppColors.mint,
+                        Icons.eco_outlined,
+                        '100% GOTS\nCotton',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildTag(
+                        AppColors.babyPink,
+                        Icons.water_drop_outlined,
+                        'Machine\nWashable',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
-        ),
+
+          // 3. BOTTOM ACTION BAR
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _handleToggleFavorite,
+                    child: Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.textPrimary),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: _isFavorite
+                            ? Colors.redAccent
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+
+                  Expanded(
+                    child: SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF556672),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        onPressed: () {
+                          final cartItem = {
+                            'title':
+                                widget.product?['title'] ??
+                                'Organic Cotton Sleepsuit',
+                            'price': widget.product?['price'] != null
+                                ? double.parse(
+                                    widget.product!['price']
+                                        .toString()
+                                        .replaceAll('\$', '')
+                                        .trim(),
+                                  )
+                                : 24.0,
+                            'image':
+                                widget.product?['image'] ??
+                                'assets/images/product/img2.png',
+                            'qty': _quantity,
+                            'color': _selectedColor,
+                            'size': _selectedSize,
+                          };
+
+                          widget.onAddToCart([cartItem]);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Added to Cart! 🛍️',
+                                style: TextStyle(fontFamily: 'Nunito'),
+                              ),
+                              backgroundColor: Color(0xFF556672),
+                              duration: Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Add to Cart',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

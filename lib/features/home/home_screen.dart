@@ -8,12 +8,18 @@ class HomeBody extends StatelessWidget {
   final List<Map<String, String>> favorites;
   final void Function(Map<String, String>) onToggleFavorite;
   final Function(List<Map<String, dynamic>>) onAddToCart;
+  final Function(Map<String, dynamic>) onViewProduct;
+  final Function(int) onNavigate;
+  final Function(String) onCategoryTap;
   
   const HomeBody({
     super.key,
     required this.favorites,
     required this.onToggleFavorite,
     required this.onAddToCart,
+    required this.onViewProduct,
+    required this.onNavigate,
+    required this.onCategoryTap,
   });
 
   @override
@@ -23,18 +29,20 @@ class HomeBody extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         children: [
           const SizedBox(height: 20),
-          const TopBanner(),
+          // PASS THE NAVIGATION TO THE TOP BANNER
+          TopBanner(onShopNow: () => onNavigate(1)),
           const SizedBox(height: 24),
           const AgeFilter(),
           const SizedBox(height: 24),
           const FlashSaleStrip(),
           const SizedBox(height: 24),
-          const CategoryGrid(),
+          CategoryGrid(onCategoryTap: onCategoryTap), // <-- Give the grid the click function
           const SizedBox(height: 24),
           NewArrivals(
             favoriteItems: favorites,
             onToggleFavorite: onToggleFavorite,
             onAddToCart: onAddToCart,
+            onViewProduct: onViewProduct,
           ),
         ],
       ),

@@ -3,10 +3,9 @@ import 'package:baby_store_app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_store_app/state/user_provider.dart';
-// Import tab constants
 
 class HomeDrawer extends ConsumerWidget {
-  // ✅ Callback to switch tabs in the shell
+ 
   final void Function(int tabIndex)? onNavigate;
 
   const HomeDrawer({super.key, this.onNavigate});

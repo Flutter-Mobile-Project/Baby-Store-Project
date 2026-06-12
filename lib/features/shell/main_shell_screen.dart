@@ -18,6 +18,7 @@ import '../map/map_screen.dart';
 import '../promotions/promotions_screen.dart';
 import '../cart/cart_screen.dart';
 import '../cart/checkout_screen.dart';
+import '../detail/product_detail_screen.dart';
 
 // ── Tab index constants ────────────────────────────────────────────
 const int tabHome = 0;
@@ -32,6 +33,7 @@ const int tabMap = 8;
 const int tabPromotions = 9;
 const int tabCheckout = 10;
 const int tabOrderHistory = 11;
+const int tabProductDetail = 12;
 // ✅ OrderHistoryScreen is now managed by the shell instead of a standalone pushed route
 
 class MainShellScreen extends ConsumerStatefulWidget {
@@ -45,12 +47,15 @@ class MainShellScreen extends ConsumerStatefulWidget {
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   late int _selectedIndex;
+  Map<String, dynamic>? _selectedProduct;
   String? _selectedCoupon;
   double _discountAmount = 0;
   StreamSubscription<List<Map<String, String>>>? _favoritesSubscription;
 
   List<Map<String, String>> _favorites = [];
   List<Map<String, dynamic>> _cartItems = [];
+
+  String _activeShopCategory = 'All';
 
   @override
   void initState() {
@@ -154,7 +159,12 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       _selectedIndex = tabCart;
     });
   }
-
+void _viewProductDetail(Map<String, dynamic> product) {
+    setState(() {
+      _selectedProduct = product;
+      _selectedIndex = tabProductDetail;
+    });
+  }
   void _moveToCart(List<Map<String, dynamic>> items) {
     setState(() {
       for (final item in items) {
@@ -200,12 +210,16 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       favorites: _favorites,
       onToggleFavorite: _toggleFavorite,
       onAddToCart: _moveToCart,
+      onViewProduct: _viewProductDetail,
+      onCategoryTap: (category) => setState(() => _activeShopCategory = category),
+      onNavigate: (i) => setState(() => _selectedIndex = i),
     ),
     ShopScreen(
       // 1
       favoriteItems: _favorites,
       onToggleFavorite: _toggleFavorite,
       onAddToCart: _moveToCart,
+      onViewProduct: _viewProductDetail,
     ),
     FavoritesScreen(
       // 2
@@ -249,8 +263,19 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       onOrderComplete: _onOrderComplete,
     ),
     const OrderHistoryScreen(),
-  ];
 
+// 12 -> PRODUCT DETAILS PAGE
+    if (_selectedProduct != null)
+      ProductDetailsScreen(
+        product: _selectedProduct,
+        onAddToCart: _moveToCart,
+        favoriteItems: _favorites,
+        onToggleFavorite: _toggleFavorite,
+        onBack: () => setState(() => _selectedIndex = tabHome), // Pass a back function
+      )
+    else
+      const Center(child: Text("Loading...")),
+  ];
   @override
   Widget build(BuildContext context) {
     return PopScope(

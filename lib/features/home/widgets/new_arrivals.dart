@@ -7,12 +7,14 @@ class NewArrivals extends StatelessWidget {
   final List<Map<String, String>> favoriteItems;
   final Function(Map<String, String>) onToggleFavorite;
   final Function(List<Map<String, dynamic>>) onAddToCart;
+  final Function(Map<String, dynamic>) onViewProduct;
 
   const NewArrivals({
     super.key,
     required this.favoriteItems,
     required this.onToggleFavorite,
     required this.onAddToCart,
+    required this.onViewProduct,
   });
 
   @override
@@ -103,14 +105,21 @@ class NewArrivals extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProductDetailsScreen(
-            product: {'title': title, 'price': price, 'image': imagePath, 'category': category},
-              onAddToCart: onAddToCart, // ✅ PASS THE FUNCTION HERE
-          ),
-          ),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ProductDetailsScreen(
+        //     product: {'title': title, 'price': price, 'image': imagePath, 'category': category},
+        //       onAddToCart: onAddToCart, // ✅ PASS THE FUNCTION HERE
+        //   ),
+        //   ),
+        // );
+        // <-- CHANGED THIS PART
+        onViewProduct({
+          'title': title, 
+          'price': price, 
+          'image': imagePath, 
+          'category': category
+        });
       },
 
       child: Container(
