@@ -61,4 +61,16 @@ List<Product> products = [
     price: 149.99,
     image: "assets/images/category/stroller.jpg",
   ),
+    Product(
+    brand: "Gear", 
+    title: "Elegant Baby Stroller",
+    price: 149.99,
+    image: "assets/images/category/i1.png",
+  ),
+    Product(
+    brand: "Soft Clothing", 
+    title: "High quality clothes",
+    price: 149.99,
+    image: "assets/images/category/i2.png",
+  ),
 ];

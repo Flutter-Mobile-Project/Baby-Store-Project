@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import 'widgets/product_reviews.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Map<String, dynamic>? product;
@@ -165,6 +166,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
                 const SizedBox(height: 24),
 
+
+              
                 Row(
                   children: [
                     Row(
@@ -336,6 +339,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                   ],
                 ),
+                // const SizedBox(height: 40),
+                const SizedBox(height: 32),
+                const Divider(height: 48, thickness: 1, color: Color(0xFFEEEEEE)),
+                const ProductReviewSection(), 
                 const SizedBox(height: 40),
               ],
             ),
