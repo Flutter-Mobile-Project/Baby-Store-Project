@@ -188,7 +188,6 @@ void _viewProductDetail(Map<String, dynamic> product) {
     _favoritesSubscription = null;
 
     setState(() {
-      _selectedIndex = tabHome;
       _cartItems = [];
       _favorites = [];
       _selectedCoupon = null;

@@ -19,6 +19,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   final _phoneController = TextEditingController();
   final _noteController = TextEditingController();
   bool _showSummary = false;
+  bool _showSuccessOverlay = false;
 
   @override
   void dispose() {
@@ -69,108 +70,130 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (!mounted) return;
 
     if (success) {
-      setState(() => _showSummary = false);
+      setState(() {
+        _showSummary = false;
+        _showSuccessOverlay = true;
+      });
       ref.read(bookingProvider.notifier).reset();
       _nameController.clear();
       _phoneController.clear();
       _noteController.clear();
-      _showSuccessDialog();
     }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: AppColors.cream,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDDEBE3),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: Color(0xFF3D6255),
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Booking Confirmed!',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF3A4D5B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'A confirmation will be sent to your registered email.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 13,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A5E6D),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onNavigate?.call(tabHome);
-                },
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            // TextButton(
-            //   onPressed: () => Navigator.pop(context),
-            //   child: const Text(
-            //     'Make another booking',
-            //     style: TextStyle(
-            //       fontFamily: 'Nunito',
-            //       color: Color(0xFF4A5E6D),
-            //       fontSize: 13,
-            //     ),
-            //   ),
-            // ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(bookingProvider);
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: _showSummary ? _buildSummary(state) : _buildForm(state),
+    return Stack(
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _showSummary ? _buildSummary(state) : _buildForm(state),
+        ),
+        if (_showSuccessOverlay) _buildSuccessOverlay(),
+      ],
+    );
+  }
+
+  Widget _buildSuccessOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 700),
+          tween: Tween(begin: 0, end: 1),
+          curve: Curves.easeOutBack,
+          builder: (context, value, child) {
+            final double clamped = value.clamp(0.0, 1.0).toDouble();
+            return Transform.scale(
+              scale: value,
+              child: Opacity(opacity: clamped, child: child),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 90,
+                  width: 90,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFDDEBE3),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF7A9E8E),
+                    size: 60,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Booking Confirmed!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3A4D5B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Your appointment has been successfully scheduled. Check your email for details.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 15,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A5E6D),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      setState(() => _showSuccessOverlay = false);
+                      widget.onNavigate?.call(tabHome);
+                    },
+                    child: const Text(
+                      'Back to Home',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

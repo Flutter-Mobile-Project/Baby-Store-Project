@@ -295,14 +295,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           try {
                             await AuthService.logout();
                             ref.read(userProvider.notifier).state = null;
+                            
+                            // Trigger callback to clean up subscriptions/state in Shell
+                            widget.onLogout?.call();
 
                             if (!mounted) return;
 
-                            // Force a full app reset by navigating to the root and clearing the stack
+                            // Force a full app reset by navigating to the login screen and clearing the stack
                             Navigator.of(
                               context,
                               rootNavigator: true,
-                            ).pushNamedAndRemoveUntil('/', (route) => false);
+                            ).pushNamedAndRemoveUntil('/login', (route) => false);
                           } finally {
                             if (mounted) setState(() => _isLoggingOut = false);
                           }

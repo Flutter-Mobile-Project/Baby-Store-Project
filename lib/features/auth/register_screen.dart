@@ -20,8 +20,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   bool _obscurePassword = true;
   bool _isLoading = false;
-  DateTime? _selectedDate;
-  int _currentStep = 0; // 0 = account, 1 = baby info
 
   String? _nameError;
   String? _emailError;
@@ -42,7 +40,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   static const Color _textDark = Color(0xFF2C2C2C);
   static const Color _textMid = Color(0xFF6B6B6B);
   static const Color _textLight = Color(0xFFAAAAAA);
-  static const Color _mintCard = Color(0xFF4A7566);
   static const Color _errorRed = Color(0xFFE05A5A);
 
   @override
@@ -113,43 +110,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     setState(() => _passwordError = _validatePassword(v));
   }
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 1),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: _darkSage,
-            onPrimary: Colors.white,
-            surface: Colors.white,
-            onSurface: _textDark,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) setState(() => _selectedDate = picked);
-  }
-
-  void _nextStep() {
+  void _register() async {
     setState(() {
       _nameError = _validateName(_nameController.text);
       _emailError = _validateEmail(_emailController.text);
       _passwordError = _validatePassword(_passwordController.text);
     });
-    if (_nameError != null || _emailError != null || _passwordError != null)
-      return;
 
-    setState(() => _currentStep = 1);
-    _stepController.reset();
-    _stepController.forward();
-  }
+    if (_nameError != null || _emailError != null || _passwordError != null) return;
 
-  void _register() async {
     setState(() => _isLoading = true);
 
     try {
@@ -168,7 +137,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           uid: firebaseUser.uid,
           name: _nameController.text.trim(),
           email: firebaseUser.email!,
-          birthday: _selectedDate?.toIso8601String(),
         );
 
         // Fetch full profile
@@ -207,25 +175,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     return s;
   }
 
-  String _formatDate(DateTime d) {
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[d.month]} ${d.day}, ${d.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -244,18 +193,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     children: [
                       GestureDetector(
                         onTap: () {
-                          if (_currentStep == 1) {
-                            setState(() => _currentStep = 0);
+                          if (Navigator.canPop(context)) {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pop(false);
                           } else {
-                            if (Navigator.canPop(context)) {
-                              Navigator.of(
-                                context,
-                                rootNavigator: true,
-                              ).pop(false);
-                            } else {
-                              // If root, maybe just go to home or do nothing
-                              Navigator.pushReplacementNamed(context, '/');
-                            }
+                            Navigator.pushReplacementNamed(context, '/');
                           }
                         },
                         child: Container(
@@ -280,12 +224,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         ),
                       ),
                       const Spacer(),
-                      // Step indicator
-                      _buildStepDot(0),
-                      const SizedBox(width: 6),
-                      _buildStepDot(1),
-                      const Spacer(),
-                      const SizedBox(width: 36),
                     ],
                   ),
                 ),
@@ -316,11 +254,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Text(
-                                _currentStep == 0
-                                    ? 'Create Account'
-                                    : "Baby's Journey",
-                                style: const TextStyle(
+                              const Text(
+                                'Create Account',
+                                style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 26,
                                   fontWeight: FontWeight.w700,
@@ -329,12 +265,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                _currentStep == 0
-                                    ? 'Welcome to TinyTots — where every\nlittle milestone matters.'
-                                    : 'Help us personalize your experience\nwith the right essentials.',
+                              const Text(
+                                'Welcome to TinyTots — where every\nlittle milestone matters.',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'Nunito',
                                   fontSize: 13.5,
                                   color: _textLight,
@@ -347,14 +281,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                         const SizedBox(height: 32),
 
-                        // ── Step content ──────────────────────
+                        // ── Content ──────────────────────
                         FadeTransition(
                           opacity: _stepFade,
                           child: SlideTransition(
                             position: _stepSlide,
-                            child: _currentStep == 0
-                                ? _buildStep1()
-                                : _buildStep2(),
+                            child: _buildForm(),
                           ),
                         ),
 
@@ -371,8 +303,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Step 1: Account details ─────────────────────────────────────
-  Widget _buildStep1() {
+  Widget _buildForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -418,7 +349,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ),
         ),
 
-        // ── Strength bar ──────────────────────────────────
         if (_passwordController.text.isNotEmpty) ...[
           const SizedBox(height: 10),
           _buildStrengthBar(),
@@ -426,7 +356,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
         const SizedBox(height: 24),
 
-        // ── Divider ───────────────────────────────────────
         Row(
           children: [
             Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
@@ -457,10 +386,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 onTap: () async {
                   final profile = await AuthService.signInWithGoogle();
                   if (profile != null) {
-                    // Update Riverpod state
                     ref.read(userProvider.notifier).state = profile;
-
-                    // Close the register screen
                     if (!mounted) return;
                     if (Navigator.canPop(context)) {
                       Navigator.of(context, rootNavigator: true).pop(true);
@@ -477,31 +403,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                 label: 'Apple',
                 icon: Icons.apple_rounded,
                 iconColor: Colors.black87,
-                onTap: () async {
-                  // Apple sign in placeholder
-                },
+                onTap: () async {},
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
-        // ── Continue button ───────────────────────────────
         _buildPrimaryButton(
-          label: 'Continue',
-          icon: Icons.arrow_forward_rounded,
-          onTap: _nextStep,
+          label: 'Create Account',
+          icon: Icons.person_add_alt_1_rounded,
+          onTap: _isLoading ? null : _register,
+          isLoading: _isLoading,
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        // ── Sign in ───────────────────────────────────────
         Center(
           child: GestureDetector(
-            onTap: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+            onTap: () => Navigator.pushReplacementNamed(context, '/login'),
             child: RichText(
               text: const TextSpan(
                 text: 'Already have an account?  ',
@@ -529,256 +450,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Step 2: Baby info ───────────────────────────────────────────
-  Widget _buildStep2() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Baby's journey card ───────────────────────────
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: _mintCard,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Personalize your experience',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Tell us about your little one and we\'ll show you age-appropriate products, tips, and milestone guides.',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 12.5,
-                  color: Colors.white.withOpacity(0.8),
-                  height: 1.55,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // ── Date picker ───────────────────────────────────
-        const Text(
-          'Birthday or Due Date',
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: _textMid,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _pickDate,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-            decoration: BoxDecoration(
-              color: _softWhite,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _selectedDate != null ? _sage : Colors.grey.shade200,
-                width: _selectedDate != null ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_month_outlined,
-                  size: 18,
-                  color: _selectedDate != null ? _sage : _textLight,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedDate != null
-                      ? _formatDate(_selectedDate!)
-                      : 'Select a date',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 14,
-                    color: _selectedDate != null ? _textDark : _textLight,
-                    fontWeight: _selectedDate != null
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-                const Spacer(),
-                if (_selectedDate != null)
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: _sage,
-                    size: 18,
-                  ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Optional note ─────────────────────────────────
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: _sage.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 15,
-                color: _sage.withOpacity(0.8),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'This is optional — you can skip and add it later in your profile.',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 11.5,
-                    color: _textMid,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // ── Membership preview ────────────────────────────
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _softWhite,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3CD),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.workspace_premium_rounded,
-                  color: Color(0xFFE6A817),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Platinum Member — unlocked',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _textDark,
-                      ),
-                    ),
-                    Text(
-                      'Exclusive deals, early access & free gift wrap',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 11,
-                        color: _textLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // ── Register button ───────────────────────────────
-        _buildPrimaryButton(
-          label: 'Start Your Journey',
-          icon: Icons.arrow_forward_rounded,
-          onTap: _isLoading ? null : _register,
-          isLoading: _isLoading,
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Terms ─────────────────────────────────────────
-        Center(
-          child: Text(
-            'By registering you agree to our Terms & Privacy Policy',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 11,
-              color: Colors.grey.shade400,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Step dot indicator ──────────────────────────────────────────
-  Widget _buildStepDot(int step) {
-    final isActive = _currentStep == step;
-    final isDone = _currentStep > step;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: isActive ? 24 : 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: isDone
-            ? _sage
-            : isActive
-            ? _darkSage
-            : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  // ── Strength bar ────────────────────────────────────────────────
   Widget _buildStrengthBar() {
     final strength = _passwordStrength;
     final labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
@@ -823,7 +494,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Primary button ──────────────────────────────────────────────
   Widget _buildPrimaryButton({
     required String label,
     required IconData icon,
@@ -881,7 +551,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Field builder ────────────────────────────────────────────────
   Widget _buildField({
     required String label,
     required String hint,
@@ -986,7 +655,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Social button ────────────────────────────────────────────────
   Widget _buildSocialButton({
     required String label,
     required IconData icon,

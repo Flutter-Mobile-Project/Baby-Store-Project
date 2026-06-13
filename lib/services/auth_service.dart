@@ -72,13 +72,16 @@ class AuthService {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       final User? user = userCredential.user;
 
       if (user != null) {
@@ -100,7 +103,7 @@ class AuthService {
         if (profile != null) {
           await register(name: profile.name, email: profile.email);
         }
-        
+
         return profile;
       }
 
@@ -116,10 +119,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final UserCredential userCredential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
       final User? user = userCredential.user;
 
       if (user != null) {

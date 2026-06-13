@@ -13,7 +13,7 @@ class BabyStoreApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
 
-      // ✅ If not registered, show Login screen first
+      // ✅ If already logged in, go to Home. Otherwise, go to Login.
       initialRoute: AuthService.isRegistered ? '/' : '/login',
       onGenerateRoute: AppRouter.generateRoute,
     );
