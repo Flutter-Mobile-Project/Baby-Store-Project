@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_store_app/theme/app_colors.dart';
 import 'package:baby_store_app/state/booking_provider.dart';
 import '../shell/main_shell_screen.dart';
-import '../auth/register_screen.dart';
+import '../auth/login_screen.dart';
 import '../../services/auth_service.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
@@ -65,17 +65,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Future<void> _confirmBooking() async {
-    // ✅ Require registration before booking
-    // if (!AuthService.isRegistered) {
-    //   final result = await Navigator.of(
-    //     context,
-    //     rootNavigator: true,
-    //   ).push(MaterialPageRoute(builder: (_) => const RegisterScreen()));
-    //   if (!mounted) return;
-    //   if (result != true) return;
-    //   AuthService.isRegistered = true;
-    // }
-
     final success = await ref.read(bookingProvider.notifier).confirmBooking();
     if (!mounted) return;
 

@@ -452,27 +452,7 @@ class _CartScreenState extends State<CartScreen> {
                 // ── Checkout ────────────────────────────────────
                 // ── Checkout ────────────────────────────────────────────
                 GestureDetector(
-                  onTap: () async {
-                    // ✅ Check if user is registered before checkout
-                    if (!AuthService.isRegistered) {
-                      final result =
-                          await Navigator.of(context, rootNavigator: true).push(
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                      if (!mounted) return;
-                      if (result == true) {
-                        AuthService.isRegistered = true;
-                        // ✅ Proceed to checkout after registration
-                        _goToCheckout();
-                      }
-                      // If user dismissed register without completing, do nothing
-                    } else {
-                      // ✅ Already registered — go straight to checkout
-                      _goToCheckout();
-                    }
-                  },
+                  onTap: _goToCheckout,
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 18),

@@ -11,6 +11,7 @@ import '../home/home_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../settings/settings_screen.dart';
 import '../shop/order_history_screen.dart';
+import '../booking/booking_history_screen.dart';
 import '../nearby/nearby_screen.dart';
 import '../booking/booking_screen.dart';
 import '../chat/chat_screen.dart';
@@ -33,7 +34,8 @@ const int tabMap = 8;
 const int tabPromotions = 9;
 const int tabCheckout = 10;
 const int tabOrderHistory = 11;
-const int tabProductDetail = 12;
+const int tabBookingHistory = 12;
+const int tabProductDetail = 13;
 // ✅ OrderHistoryScreen is now managed by the shell instead of a standalone pushed route
 
 class MainShellScreen extends ConsumerStatefulWidget {
@@ -200,7 +202,7 @@ void _viewProductDetail(Map<String, dynamic> product) {
       _cartItems = [];
       _selectedCoupon = null;
       _discountAmount = 0;
-      _selectedIndex = tabHome;
+      // We don't change _selectedIndex here so the user can see the success overlay on CheckoutScreen
     });
   }
 
@@ -231,6 +233,8 @@ void _viewProductDetail(Map<String, dynamic> product) {
     SettingsScreen(
       onLogout: _onLogout,
       onOrderHistoryTap: () => setState(() => _selectedIndex = tabOrderHistory),
+      onFavoritesTap: () => setState(() => _selectedIndex = tabFavorites),
+      onBookingHistoryTap: () => setState(() => _selectedIndex = tabBookingHistory),
     ), // 3
     CartScreen(
       // 4
@@ -261,8 +265,10 @@ void _viewProductDetail(Map<String, dynamic> product) {
       discountAmount: _discountAmount,
       isTab: true,
       onOrderComplete: _onOrderComplete,
+      onNavigate: (i) => setState(() => _selectedIndex = i),
     ),
     const OrderHistoryScreen(),
+    const BookingHistoryScreen(),
 
 // 12 -> PRODUCT DETAILS PAGE
     if (_selectedProduct != null)

@@ -11,6 +11,7 @@ class CheckoutScreen extends StatefulWidget {
   final double discountAmount;
   final bool isTab;
   final VoidCallback? onOrderComplete;
+  final void Function(int)? onNavigate;
 
   const CheckoutScreen({
     super.key,
@@ -19,6 +20,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.discountAmount,
     this.isTab = false,
     this.onOrderComplete,
+    this.onNavigate,
   });
 
   @override
@@ -160,6 +162,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           _orderId = orderId.toString();
           _showSuccessOverlay = true;
         });
+
+        // ✅ Call the callback to clear cart and reset state in MainShell
+        widget.onOrderComplete?.call();
 
         print("_showSuccessOverlay = $_showSuccessOverlay");
       }
@@ -453,13 +458,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MainShellScreen(),
-                              ),
-                              (route) => false,
-                            );
+                            if (widget.onNavigate != null) {
+                              widget.onNavigate!(tabHome);
+                            } else {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MainShellScreen(),
+                                ),
+                                (route) => false,
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF556B7B),

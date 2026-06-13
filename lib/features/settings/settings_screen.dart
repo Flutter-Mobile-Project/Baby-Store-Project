@@ -7,8 +7,16 @@ import 'package:baby_store_app/state/user_provider.dart';
 class SettingsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onLogout;
   final VoidCallback? onOrderHistoryTap;
+  final VoidCallback? onFavoritesTap;
+  final VoidCallback? onBookingHistoryTap;
 
-  const SettingsScreen({super.key, this.onLogout, this.onOrderHistoryTap});
+  const SettingsScreen({
+    super.key,
+    this.onLogout,
+    this.onOrderHistoryTap,
+    this.onFavoritesTap,
+    this.onBookingHistoryTap,
+  });
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -200,17 +208,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _divider(),
                         _settingsItem(
-                          icon: Icons.credit_card,
+                          icon: Icons.favorite_outline,
                           iconBg: AppColors.babyPink,
                           iconColor: const Color(0xFFB83280),
-                          title: 'Payment Methods',
+                          title: 'My Favorites',
+                          onTap: widget.onFavoritesTap,
                         ),
                         _divider(),
                         _settingsItem(
-                          icon: Icons.location_on_outlined,
+                          icon: Icons.calendar_month_outlined,
                           iconBg: AppColors.mintLight,
                           iconColor: const Color(0xFF2F855A),
-                          title: 'Shipping Addresses',
+                          title: 'My Bookings',
+                          onTap: widget.onBookingHistoryTap,
                         ),
                       ],
                     ),

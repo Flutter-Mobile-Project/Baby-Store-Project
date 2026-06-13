@@ -111,6 +111,31 @@ class AuthService {
     }
   }
 
+  static Future<model.User?> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        final profile = await getUserProfile(user.uid);
+        if (profile != null) {
+          await register(name: profile.name, email: profile.email);
+        }
+        return profile;
+      }
+      return null;
+    } catch (e) {
+      print('Error logging in: $e');
+      return null;
+    }
+  }
+
   // ── Save on register ────────────────────────────────────────────
   static Future<void> register({
     required String name,

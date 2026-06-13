@@ -40,14 +40,7 @@ class BookingService {
       await bookingRef.set(bookingData);
 
       // 2. Save to user-specific bookings sub-collection
-      await _db.collection('users').doc(user.uid).collection('my_bookings').doc(bookingRef.id).set({
-        'bookingId': bookingRef.id,
-        'specialistName': specialistName,
-        'date': Timestamp.fromDate(date),
-        'time': time,
-        'status': 'Confirmed',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _db.collection('users').doc(user.uid).collection('bookings').doc(bookingRef.id).set(bookingData);
 
       return null; // Success
     } catch (e) {
@@ -58,12 +51,18 @@ class BookingService {
 
   // ── Get User Bookings ───────────────────────────────────────────
   static Stream<QuerySnapshot> getUserBookings() {
-    final User? user = _auth.currentUser;
-    if (user == null) return const Stream.empty();
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return const Stream.empty();
+      }
 
-    return _db.collection('bookings')
-        .where('userId', isEqualTo: user.uid)
-        .orderBy('date', descending: true)
-        .snapshots();
+      // Query the user's 'bookings' sub-collection
+      return _db.collection('users')
+          .doc(user.uid)
+          .collection('bookings')
+          .orderBy('date', descending: true)
+          .snapshots();
+    });
   }
 }
+

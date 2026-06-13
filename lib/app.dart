@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
 import 'router/app_router.dart';
+import 'services/auth_service.dart';
 
 class BabyStoreApp extends StatelessWidget {
   const BabyStoreApp({super.key});
@@ -12,8 +13,8 @@ class BabyStoreApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
 
-      // ✅ USE ROUTER, NOT home:
-      initialRoute: '/',
+      // ✅ If not registered, show Login screen first
+      initialRoute: AuthService.isRegistered ? '/' : '/login',
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

@@ -184,7 +184,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         ref.read(userProvider.notifier).state = userProfile;
 
         if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop(true);
+        if (Navigator.canPop(context)) {
+          Navigator.of(context, rootNavigator: true).pop(true);
+        } else {
+          Navigator.pushReplacementNamed(context, '/');
+        }
       }
     } catch (e) {
       print("Registration error: $e");
@@ -243,10 +247,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           if (_currentStep == 1) {
                             setState(() => _currentStep = 0);
                           } else {
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pop(false);
+                            if (Navigator.canPop(context)) {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pop(false);
+                            } else {
+                              // If root, maybe just go to home or do nothing
+                              Navigator.pushReplacementNamed(context, '/');
+                            }
                           }
                         },
                         child: Container(
@@ -453,7 +462,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                     // Close the register screen
                     if (!mounted) return;
-                    Navigator.of(context, rootNavigator: true).pop(true);
+                    if (Navigator.canPop(context)) {
+                      Navigator.of(context, rootNavigator: true).pop(true);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
                   }
                 },
               ),
@@ -486,7 +499,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         // ── Sign in ───────────────────────────────────────
         Center(
           child: GestureDetector(
-            onTap: () => Navigator.of(context, rootNavigator: true).pop(false),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
             child: RichText(
               text: const TextSpan(
                 text: 'Already have an account?  ',

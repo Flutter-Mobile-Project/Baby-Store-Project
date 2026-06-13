@@ -20,19 +20,20 @@ class OrderService {
       final User? user = _auth.currentUser;
       if (user == null) return {'error': 'User not logged in'};
 
-      // Create the order document
-      final orderRef = _db.collection('orders').doc();
+      // Create the order document in user's sub-collection
+      final orderRef = _db
+          .collection('users')
+          .doc(user.uid)
+          .collection('orders')
+          .doc();
       final orderId = orderRef.id;
-      
-      await orderRef.set({
+
+      final orderData = {
         'orderId': orderId,
         'userId': user.uid,
         'userEmail': user.email,
         'fullName': fullName,
-        'shippingAddress': {
-          'address': address,
-          'city': city,
-        },
+        'shippingAddress': {'address': address, 'city': city},
         'items': items,
         'subtotal': subtotal,
         'discount': discount,
@@ -40,15 +41,13 @@ class OrderService {
         'paymentMethod': paymentMethod,
         'status': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
 
-      // Also add to a user-specific sub-collection for easy lookup
-      await _db.collection('users').doc(user.uid).collection('my_orders').doc(orderId).set({
-        'orderId': orderId,
-        'total': total,
-        'status': 'Pending',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      // Save to user's orders sub-collection
+      await orderRef.set(orderData);
+
+      // Also save to a top-level 'orders' collection for admin visibility (optional but recommended)
+      await _db.collection('orders').doc(orderId).set(orderData);
 
       // Increment ordersCount in user document
       await _db.collection('users').doc(user.uid).update({
@@ -64,18 +63,14 @@ class OrderService {
 
   // ── Get User Orders ─────────────────────────────────────────────
   static Stream<QuerySnapshot> getUserOrders() {
-    // We use authStateChanges to ensure that if the user state isn't ready yet,
-    // the stream will update once the user is authenticated.
     return _auth.authStateChanges().asyncExpand((user) {
-      if (user == null) {
-        return const Stream.empty();
-      }
+      if (user == null) return const Stream.empty();
 
-      // Query the top-level 'orders' collection for this user.
-      // NOTE: This query REQUIRES a composite index in Firestore:
-      // Collection: orders, Fields: userId (Ascending), createdAt (Descending)
-      return _db.collection('orders')
-          .where('userId', isEqualTo: user.uid)
+      return _db
+          .collection('users')
+          .doc(user.uid)
+          .collection('orders')
+          .orderBy('createdAt', descending: true)
           .snapshots();
     });
   }
