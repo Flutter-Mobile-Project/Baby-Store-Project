@@ -33,10 +33,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   };
 
   void _handleAddToCart() {
+    double parsedPrice = 24.0;
+    if (widget.product?['price'] != null) {
+      String priceStr = widget.product!['price'].toString().replaceAll('\$', '').trim();
+      parsedPrice = double.tryParse(priceStr) ?? 24.0;
+    }
     List<Map<String, dynamic>> itemsToAdd = [
       {
         'title': widget.product?['title'] ?? 'Organic Cotton Sleepsuit',
-        'price': widget.product?['price'] ?? '\$24.00',
+        'price': parsedPrice,
+        'image': widget.product?['image'] ?? 'assets/images/product/img2.png',
         'qty': _quantity,
         'color': _selectedColor,
         'size': _selectedSize,
@@ -90,12 +96,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // We use Material to provide the cream background without blocking the AppShell!
     return Material(
       color: AppColors.cream,
       child: Column(
         children: [
-          // 1. CUSTOM TOP BAR (Replaces the old Scaffold AppBar)
+          // 1. CUSTOM TOP BAR
           SafeArea(
             bottom: false,
             child: Padding(
@@ -112,15 +117,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       color: AppColors.textPrimary,
                       size: 20,
                     ),
-                    onPressed:
-                        widget.onBack ??
+                    onPressed: widget.onBack ??
                         () {
                           if (Navigator.canPop(context)) {
                             Navigator.pop(context);
                           }
                         },
                   ),
-
                 ],
               ),
             ),
@@ -139,7 +142,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(32),
                         image: DecorationImage(
-                          image: AssetImage(_colorImages[_selectedColor]!),
+                          // ✅ FIX: Use the actual product image!
+                          image: AssetImage(widget.product?['image'] ?? _colorImages[_selectedColor]!),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -185,9 +189,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Organic Cotton Sleepsuit',
-                  style: TextStyle(
+                
+                // ✅ FIX: Display the dynamic Product Title
+                Text(
+                  widget.product?['title'] ?? 'Organic Cotton Sleepsuit',
+                  style: const TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
@@ -197,9 +203,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                 Row(
                   children: [
-                    const Text(
-                      '\$24.00',
-                      style: TextStyle(
+                    // ✅ FIX: Display the dynamic Product Price
+                    Text(
+                      widget.product?['price']?.toString() ?? '\$24.00',
+                      style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
@@ -207,7 +214,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                     const SizedBox(width: 12),
                     const Text(
-                      '\$35.00',
+                      '\$35.00', // We can leave this as a static "old price" for visual effect
                       style: TextStyle(
                         fontSize: 16,
                         decoration: TextDecoration.lineThrough,
@@ -374,41 +381,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                        onPressed: () {
-                          final cartItem = {
-                            'title':
-                                widget.product?['title'] ??
-                                'Organic Cotton Sleepsuit',
-                            'price': widget.product?['price'] != null
-                                ? double.parse(
-                                    widget.product!['price']
-                                        .toString()
-                                        .replaceAll('\$', '')
-                                        .trim(),
-                                  )
-                                : 24.0,
-                            'image':
-                                widget.product?['image'] ??
-                                'assets/images/product/img2.png',
-                            'qty': _quantity,
-                            'color': _selectedColor,
-                            'size': _selectedSize,
-                          };
-
-                          widget.onAddToCart([cartItem]);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Added to Cart! 🛍️',
-                                style: TextStyle(fontFamily: 'Nunito'),
-                              ),
-                              backgroundColor: Color(0xFF556672),
-                              duration: Duration(seconds: 1),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
+                        onPressed: _handleAddToCart, // ✅ This will show your Snackbar!
                         child: const Text(
                           'Add to Cart',
                           style: TextStyle(
