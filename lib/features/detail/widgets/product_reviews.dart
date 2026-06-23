@@ -66,55 +66,96 @@ class _ProductReviewSectionState extends State<ProductReviewSection> {
         const SizedBox(height: 16),
 
         // 1. RATING SUMMARY
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                const Text(
-                  '4.8',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 48, fontWeight: FontWeight.bold, height: 1),
-                ),
-                Row(
-                  children: const [
-                    Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                    Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                    Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                    Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                    Icon(Icons.star_half, color: Color(0xFFFFD700), size: 16),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                
-                // ✅ DYNAMIC COUNTER: Starts at 124, adds new reviews automatically!
-                StreamBuilder<QuerySnapshot>(
-                  stream: ReviewService.getReviewsStream(widget.productId),
-                  builder: (context, snapshot) {
-                    int totalReviews = 124; // Keep the base number high so it looks real
-                    if (snapshot.hasData) {
-                      totalReviews += snapshot.data!.docs.length; // Add new Firebase reviews
+        StreamBuilder<QuerySnapshot>(
+          stream: ReviewService.getReviewsStream(widget.productId),
+          builder: (context, snapshot) {
+            int totalReviews = 0;
+            double avgRating = 0.0;
+            Map<int, int> ratingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            
+            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+              totalReviews = snapshot.data!.docs.length;
+              final ratings = snapshot.data!.docs
+                  .map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final rating = data['rating'] ?? 0;
+                    if (rating >= 1 && rating <= 5) {
+                      ratingDistribution[rating] = (ratingDistribution[rating] ?? 0) + 1;
                     }
-                    return Text(
+                    return rating;
+                  })
+                  .toList();
+              avgRating = ratings.isNotEmpty ? ratings.reduce((a, b) => a + b) / ratings.length : 0.0;
+            }
+            
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      avgRating > 0 ? avgRating.toStringAsFixed(1) : '0.0',
+                      style: const TextStyle(fontFamily: 'Poppins', fontSize: 48, fontWeight: FontWeight.bold, height: 1),
+                    ),
+                    Row(
+                      children: List.generate(5, (index) => Icon(
+                        index < avgRating ? Icons.star : Icons.star_border,
+                        color: const Color(0xFFFFD700),
+                        size: 16,
+                      )),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       '$totalReviews reviews',
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: Colors.grey.shade500),
-                    );
-                  },
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 32),
+                Expanded(
+                  child: Column(
+                    children: [
+                      if (totalReviews > 0)
+                        ...List.generate(5, (starRating) {
+                          final count = ratingDistribution[5 - starRating] ?? 0;
+                          final percentage = totalReviews > 0 ? (count / totalReviews) : 0.0;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${5 - starRating}',
+                                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.star, color: Color(0xFFFFD700), size: 12),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: percentage,
+                                      backgroundColor: Colors.grey.shade200,
+                                      color: const Color(0xFFFFD700),
+                                      minHeight: 6,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '$count',
+                                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(width: 32),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildRatingBar('5 ★', 0.85),
-                  _buildRatingBar('4 ★', 0.10),
-                  _buildRatingBar('3 ★', 0.03),
-                  _buildRatingBar('2 ★', 0.01),
-                  _buildRatingBar('1 ★', 0.01),
-                ],
-              ),
-            ),
-          ],
+            );
+          },
         ),
         const SizedBox(height: 32),
 
@@ -170,57 +211,75 @@ class _ProductReviewSectionState extends State<ProductReviewSection> {
         ),
         const SizedBox(height: 32),
 
-        // 3. HYBRID REVIEWS (Real Firebase ones + Fake presentation ones)
+        // 3. REAL REVIEWS ONLY
         StreamBuilder<QuerySnapshot>(
           stream: ReviewService.getReviewsStream(widget.productId),
           builder: (context, snapshot) {
-            List<Widget> realReviewsWidgets = [];
-
-            // If Firebase has data, create widgets for them
-            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-              realReviewsWidgets = snapshot.data!.docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return Column(
-                  children: [
-                    _buildReviewItem(
-                      data['name'] ?? 'Guest User',
-                      data['badge'] ?? 'Verified Buyer',
-                      'Just now', 
-                      data['rating'] ?? 5,
-                      data['text'] ?? '',
-                    ),
-                    const Divider(color: Color(0xFFEEEEEE), height: 24),
-                  ],
-                );
-              }).toList();
+            if (snapshot.hasError) {
+              return const Center(child: Text('Error loading reviews'));
             }
-
-            // Return Firebase reviews FIRST, then the fake ones SECOND so UI is always full!
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'No reviews yet. Be the first to review!',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: Colors.grey),
+                  ),
+                ),
+              );
+            }
+            
+            final reviews = snapshot.data!.docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return {
+                'name': data['name'] ?? 'Anonymous',
+                'rating': data['rating'] ?? 0,
+                'date': _formatDate(data['createdAt']),
+                'text': data['text'] ?? '',
+              };
+            }).toList();
+            
             return Column(
               children: [
-                ...realReviewsWidgets, 
-                // We keep these so your UI never looks empty during the presentation!
-                _buildReviewItem(
-                  'Sophia M.',
-                  'Verified Buyer',
-                  '2 days ago',
-                  5,
-                  'Absolutely love the premium material! It feels incredibly safe and smooth for my baby.',
-                ),
-                const Divider(color: Color(0xFFEEEEEE), height: 24),
-                _buildReviewItem(
-                  'Liam K.',
-                  'Verified Buyer',
-                  '1 week ago',
-                  4,
-                  'Very soft and matches the photo perfectly. Delivery took an extra day but product is top notch.',
-                ),
+                ...reviews.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final review = entry.value;
+                  return Column(
+                    children: [
+                      _buildReviewItem(
+                        review['name'],
+                        'Verified Buyer',
+                        review['date'],
+                        review['rating'],
+                        review['text'],
+                      ),
+                      if (index < reviews.length - 1)
+                        const Divider(color: Color(0xFFEEEEEE), height: 24),
+                    ],
+                  );
+                }).toList(),
               ],
             );
           },
         ),
       ],
     );
+  }
+
+  static String _formatDate(dynamic createdAt) {
+    if (createdAt == null) return 'Recently';
+    try {
+      final date = createdAt is Timestamp ? createdAt.toDate() : DateTime.parse(createdAt.toString());
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inDays > 7) return '${diff.inDays ~/ 7} weeks ago';
+      if (diff.inDays > 0) return '${diff.inDays} days ago';
+      if (diff.inHours > 0) return '${diff.inHours} hours ago';
+      return 'Recently';
+    } catch (e) {
+      return 'Recently';
+    }
   }
 
   Widget _buildRatingBar(String label, double percentage) {

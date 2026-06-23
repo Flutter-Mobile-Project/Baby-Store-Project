@@ -382,7 +382,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       item["title"],
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    subtitle: Text("Qty: $qty"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Qty: $qty"),
+                        if (item["color"] != null || item["size"] != null)
+                          Text(
+                            'Color: ${item["color"] ?? ''}, Size: ${item["size"] ?? ''}'
+                                .trim()
+                                .replaceAll(RegExp(r'(^, |, $)'), ''),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.black54,
+                            ),
+                          ),
+                      ],
+                    ),
                     trailing: Text(
                       "\$${(price * qty).toStringAsFixed(2)}",
                       style: const TextStyle(fontWeight: FontWeight.bold),

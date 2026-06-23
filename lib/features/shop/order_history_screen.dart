@@ -253,6 +253,25 @@ class OrderHistoryScreen extends StatelessWidget {
                                                           Colors.grey.shade500,
                                                     ),
                                                   ),
+                                                  if (item['color'] != null ||
+                                                      item['size'] != null)
+                                                    Text(
+                                                      'Color: ${item['color'] ?? ''}, Size: ${item['size'] ?? ''}'
+                                                          .trim()
+                                                          .replaceAll(
+                                                            RegExp(
+                                                              r'(^, |, $)',
+                                                            ),
+                                                            '',
+                                                          ),
+                                                      style: TextStyle(
+                                                        fontFamily: 'Nunito',
+                                                        fontSize: 11,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade500,
+                                                      ),
+                                                    ),
                                                 ],
                                               ),
                                             ),

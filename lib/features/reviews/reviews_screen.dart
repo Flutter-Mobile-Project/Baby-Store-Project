@@ -1,41 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../services/review_service.dart';
 
 class ReviewsScreen extends StatelessWidget {
-  const ReviewsScreen({super.key});
+  final String productId;
+
+  const ReviewsScreen({super.key, this.productId = 'Organic Cotton Sleepsuit'});
+
+  static String _formatDate(dynamic createdAt) {
+    if (createdAt == null) return 'Recently';
+    try {
+      final date = createdAt is Timestamp ? createdAt.toDate() : DateTime.parse(createdAt.toString());
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inDays > 7) return '${diff.inDays ~/ 7} weeks ago';
+      if (diff.inDays > 0) return '${diff.inDays} days ago';
+      if (diff.inHours > 0) return '${diff.inHours} hours ago';
+      return 'Recently';
+    } catch (e) {
+      return 'Recently';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sample review data to populate the list view
-    final List<Map<String, dynamic>> reviews = [
-      {
-        'name': 'Sophia Laurent',
-        'rating': 5,
-        'date': '2 days ago',
-        'comment':
-            'Absolutely love this sleepsuit! The organic cotton feels incredibly soft on my baby’s skin. It washed beautifully without stretching or losing its color.',
-        'avatarColor': AppColors.babyPink,
-      },
-      {
-        'name': 'Liam Harrison',
-        'rating': 4,
-        'date': '1 week ago',
-        'comment':
-            'Great quality material. The double zipper makes midnight diaper changes so much easier. Dropped one star only because shipping took a bit longer than expected.',
-        'avatarColor': AppColors.babyBlue,
-      },
-      {
-        'name': 'Emma Watson',
-        'rating': 5,
-        'date': '2 weeks ago',
-        'comment':
-            'Perfect fit for my 4-month-old. The mint color looks exactly like the photos. Will definitely be buying a couple more of these!',
-        'avatarColor': AppColors.mint,
-      },
-    ];
-
     return Scaffold(
-      backgroundColor: AppColors.cream, // Matches your main global background
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
         elevation: 0,
@@ -68,140 +59,247 @@ class ReviewsScreen extends StatelessWidget {
               color: AppColors.beige, // Accent frame background
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Row(
-              children: [
-                Column(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: ReviewService.getReviewsStream(productId),
+              builder: (context, snapshot) {
+                int totalReviews = 0;
+                double avgRating = 0.0;
+                Map<int, int> ratingDistribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+                
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  totalReviews = snapshot.data!.docs.length;
+                  final ratings = snapshot.data!.docs
+                      .map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final rating = data['rating'] ?? 0;
+                        if (rating >= 1 && rating <= 5) {
+                          ratingDistribution[rating] = (ratingDistribution[rating] ?? 0) + 1;
+                        }
+                        return rating;
+                      })
+                      .toList();
+                  avgRating = ratings.isNotEmpty ? ratings.reduce((a, b) => a + b) / ratings.length : 0.0;
+                }
+                
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '4.8',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const Text(
-                      'out of 5 stars',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Row(
-                      children: List.generate(
-                        5,
-                        (index) => Icon(
-                          index < 4 ? Icons.star : Icons.star_half,
-                          color: const Color(0xFFFFD700),
-                          size: 16,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              avgRating > 0 ? avgRating.toStringAsFixed(1) : '0.0',
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Text(
+                              'out of 5 stars',
+                              style: TextStyle(
+                                fontFamily: 'Nunito',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: List.generate(
+                                5,
+                                (index) => Icon(
+                                  index < avgRating ? Icons.star : Icons.star_border,
+                                  color: const Color(0xFFFFD700),
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$totalReviews Verified Buyer Reviews',
+                              style: const TextStyle(
+                                fontFamily: 'Nunito',
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                        const Spacer(),
+                        if (totalReviews > 0)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              ...List.generate(5, (starRating) {
+                                final count = ratingDistribution[5 - starRating] ?? 0;
+                                final percentage = totalReviews > 0 ? (count / totalReviews) : 0.0;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        '${5 - starRating}',
+                                        style: const TextStyle(
+                                          fontFamily: 'Nunito',
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.star, color: Color(0xFFFFD700), size: 12),
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        width: 100,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade300,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: FractionallySizedBox(
+                                          alignment: Alignment.centerLeft,
+                                          widthFactor: percentage,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFD700),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '$count',
+                                        style: const TextStyle(
+                                          fontFamily: 'Nunito',
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                      ],
                     ),
                   ],
-                ),
-                const Spacer(),
-                Text(
-                  '124 Verified Buyer\nReviews & Ratings',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary.withOpacity(0.8),
-                    height: 1.4,
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
 
           // ── 2. SCROLLING REVIEWS LIST ────────────────────────────
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              itemCount: reviews.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final review = reviews[index];
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white, width: 1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: ReviewService.getReviewsStream(productId),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error loading reviews'));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No reviews yet. Be the first to review!',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 16),
+                    ),
+                  );
+                }
+                final reviews = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return {
+                    'name': data['name'] ?? 'Anonymous',
+                    'rating': data['rating'] ?? 0,
+                    'date': _formatDate(data['createdAt']),
+                    'comment': data['text'] ?? '',
+                  };
+                }).toList();
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  itemCount: reviews.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final review = reviews[index];
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            backgroundColor: review['avatarColor'],
-                            radius: 20,
-                            child: Text(
-                              review['name'][0],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  review['name'],
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: AppColors.babyPink,
+                                radius: 20,
+                                child: Text(
+                                  review['name'][0],
                                   style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
-                                Row(
-                                  children: List.generate(
-                                    5,
-                                    (starIndex) => Icon(
-                                      Icons.star,
-                                      color: starIndex < review['rating']
-                                          ? const Color(0xFFFFD700)
-                                          : Colors.grey.shade300,
-                                      size: 14,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      review['name'],
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
-                                  ),
+                                    Row(
+                                      children: List.generate(
+                                        5,
+                                        (starIndex) => Icon(
+                                          Icons.star,
+                                          color: starIndex < review['rating']
+                                              ? const Color(0xFFFFD700)
+                                              : Colors.grey.shade300,
+                                          size: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              Text(
+                                review['date'],
+                                style: const TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 12),
                           Text(
-                            review['date'],
+                            review['comment'],
                             style: const TextStyle(
                               fontFamily: 'Nunito',
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                              height: 1.4,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        review['comment'],
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),

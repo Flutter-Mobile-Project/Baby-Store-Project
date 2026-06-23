@@ -204,14 +204,6 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ),
                               Text(
-                                item["description"] ?? "Product",
-                                style: const TextStyle(
-                                  fontFamily: 'Nunito',
-                                  color: Colors.black54,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              Text(
                                 "\$${item["price"]}",
                                 style: const TextStyle(
                                   fontFamily: 'Nunito',
@@ -220,6 +212,16 @@ class _CartScreenState extends State<CartScreen> {
                                   color: AppColors.textPrimary,
                                 ),
                               ),
+                              if (item["color"] != null || item["size"] != null)
+                                Text(
+                                  'Color: ${item["color"] ?? ''}, Size: ${item["size"] ?? ''}'
+                                      .trim(),
+                                  style: const TextStyle(
+                                    fontFamily: 'Nunito',
+                                    color: Colors.black54,
+                                    fontSize: 11,
+                                  ),
+                                ),
                             ],
                           ),
                         ),

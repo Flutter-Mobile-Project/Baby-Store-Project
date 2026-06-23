@@ -147,28 +147,38 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
                 Row(
                   children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                        Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                        Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                        Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                        Icon(Icons.star_half, color: Color(0xFFFFD700), size: 16),
-                      ],
-                    ),
-                    const SizedBox(width: 8),
-                    
-                    // ✅ DYNAMIC COUNTER
+                    // ✅ DYNAMIC RATING - Real reviews only
                     StreamBuilder<QuerySnapshot>(
                       stream: ReviewService.getReviewsStream(widget.product?['title'] ?? 'Organic Cotton Sleepsuit'),
                       builder: (context, snapshot) {
-                        int totalReviews = 124; // Base mockup count
-                        if (snapshot.hasData) {
-                          totalReviews += snapshot.data!.docs.length; // Add real reviews
+                        double avgRating = 0.0;
+                        int totalReviews = 0;
+                        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                          totalReviews = snapshot.data!.docs.length;
+                          final ratings = snapshot.data!.docs
+                              .map((doc) => (doc.data() as Map<String, dynamic>)['rating'] ?? 0)
+                              .toList();
+                          avgRating = ratings.reduce((a, b) => a + b) / ratings.length;
                         }
-                        return Text(
-                          '4.8 ($totalReviews Reviews)',
-                          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.bold),
+                        return Row(
+                          children: [
+                            ...List.generate(5, (index) {
+                              if (avgRating == 0) {
+                                return const Icon(Icons.star_border, color: Color(0xFFFFD700), size: 16);
+                              }
+                              if (index < avgRating) {
+                                return const Icon(Icons.star, color: Color(0xFFFFD700), size: 16);
+                              } else if (index < avgRating + 0.5) {
+                                return const Icon(Icons.star_half, color: Color(0xFFFFD700), size: 16);
+                              }
+                              return const Icon(Icons.star_border, color: Color(0xFFFFD700), size: 16);
+                            }),
+                            const SizedBox(width: 8),
+                            Text(
+                              totalReviews > 0 ? '${avgRating.toStringAsFixed(1)} ($totalReviews Reviews)' : '0.0 (No reviews yet)',
+                              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         );
                       },
                     ),
