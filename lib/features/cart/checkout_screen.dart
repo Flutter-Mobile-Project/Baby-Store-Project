@@ -53,6 +53,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     // No timer at start, only when ABA/Acleda selected?
     // Or maybe start when selected.
+
+    // ── Auto-format card number input ──────────────────────────
+    cardNumberController.addListener(_formatCardNumber);
+
+    // Auto-format expiry with slash
+    expiryController.addListener(_formatExpiry);
   }
 
   @override
@@ -65,6 +71,78 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     cvvController.dispose();
     _paymentTimer?.cancel();
     super.dispose();
+  }
+
+  // ── Auto-format card number: "1234 5678 9012" ─────────────────
+  void _formatCardNumber() {
+    final text = cardNumberController.text.replaceAll(' ', '');
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(text[i]);
+    }
+    final formatted = buffer.toString();
+    if (formatted.length > 14) {
+      // Max "1234 5678 9012" = 14 chars (12 digits + 2 spaces)
+      cardNumberController.text = formatted.substring(0, 14);
+      cardNumberController.selection = TextSelection.fromPosition(
+        TextPosition(offset: 14),
+      );
+    } else if (formatted != cardNumberController.text) {
+      cardNumberController.text = formatted;
+      cardNumberController.selection = TextSelection.fromPosition(
+        TextPosition(offset: formatted.length),
+      );
+    }
+  }
+
+  // ── Auto-format expiry: "01/26" or "12/2026" ─────────────────
+  void _formatExpiry() {
+    final raw = expiryController.text.replaceAll('/', '');
+
+    // Only allow digits
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits != raw) {
+      expiryController.text = digits;
+    }
+
+    if (digits.length >= 3) {
+      // Month: always pad to 2 digits
+      String month = digits.substring(0, 2);
+      final monthNum = int.tryParse(month) ?? 0;
+      if (monthNum > 12) {
+        month = '12'; // Clamp month to max 12
+      } else if (digits.length == 2 && monthNum == 0) {
+        // Don't allow "00" — let user continue typing "01" etc.
+      }
+
+      // Year: take remaining digits (2 or 4)
+      final yearRaw = digits.substring(2);
+      // Allow up to 4 digits for year (e.g., "26" or "2026")
+      final year = yearRaw.length > 4 ? yearRaw.substring(0, 4) : yearRaw;
+
+      final formatted = year.isEmpty ? month : '$month/$year';
+
+      if (formatted != expiryController.text) {
+        expiryController.text = formatted;
+        expiryController.selection = TextSelection.fromPosition(
+          TextPosition(offset: expiryController.text.length),
+        );
+      }
+    } else {
+      // For 1-2 digits: pad month with leading zero only if 2 digits
+      if (digits.length == 2) {
+        final monthNum = int.tryParse(digits) ?? 0;
+        if (monthNum > 12) {
+          expiryController.text = '12';
+          expiryController.selection = TextSelection.fromPosition(
+            TextPosition(offset: 2),
+          );
+        }
+      }
+    }
   }
 
   void _startPaymentTimer() {
@@ -121,9 +199,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     // Additional validations for Card
     if (selectedPayment == 'card') {
-      if (cardNumberController.text.isEmpty ||
-          expiryController.text.isEmpty ||
-          cvvController.text.isEmpty) {
+      final rawCardNumber = cardNumberController.text
+          .replaceAll(' ', '')
+          .trim();
+
+      if (rawCardNumber.length < 12) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please enter a valid 12-digit card number"),
+          ),
+        );
+        return;
+      }
+      if (expiryController.text.isEmpty || cvvController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Please fill in card details")),
         );
@@ -487,7 +575,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: Color(0xFF2D3E50),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -514,7 +602,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         style: TextStyle(
                           fontFamily: 'Nunito',
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: AppColors.textSecondary,
                           height: 1.5,
                         ),
                       ),
@@ -561,7 +649,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Nunito',
                                 fontSize: 15,
-                                color: Color(0xFF2D3E50),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
