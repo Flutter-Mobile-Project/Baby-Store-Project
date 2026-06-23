@@ -255,6 +255,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         // ✅ Call the callback to clear cart and reset state in MainShell
         widget.onOrderComplete?.call();
 
+        // ✅ Clear checkout form fields for next order
+        fullNameController.clear();
+        addressController.clear();
+        cityController.clear();
+        cardNumberController.clear();
+        expiryController.clear();
+        cvvController.clear();
+
         print("_showSuccessOverlay = $_showSuccessOverlay");
       }
     }
@@ -677,6 +685,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
+                            // Reset checkout state before navigating home
+                            setState(() {
+                              _showSuccessOverlay = false;
+                              _orderId = '';
+                              selectedPayment = 'card';
+                              useBillingAddress = true;
+                            });
+                            _paymentTimer?.cancel();
+
                             if (widget.onNavigate != null) {
                               widget.onNavigate!(tabHome);
                             } else {

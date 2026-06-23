@@ -54,6 +54,24 @@ class _CartScreenState extends State<CartScreen> {
         _applyCoupon(widget.couponCode!);
       });
     }
+
+    // Sync cart items from parent when they change (e.g., after order completion)
+    if (widget.cartItems != oldWidget.cartItems) {
+      setState(() {
+        cartItems = widget.cartItems;
+      });
+    }
+
+    // Sync coupon from parent when it changes (e.g., after order completion)
+    if (widget.couponCode != oldWidget.couponCode) {
+      setState(() {
+        appliedCoupon = widget.couponCode;
+        if (widget.couponCode == null || widget.couponCode!.isEmpty) {
+          discountAmount = 0.0;
+          _couponController.clear();
+        }
+      });
+    }
   }
 
   @override
