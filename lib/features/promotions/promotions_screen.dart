@@ -110,7 +110,8 @@ class PromotionsScreen extends StatelessWidget {
   }
 
   Widget _buildCouponCard({
-    required BuildContext context,
+    //helper method to build the same coupon card
+    required BuildContext context, //parameters for the card content
     required String title,
     required String subtitle,
     required String code,
