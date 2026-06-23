@@ -36,10 +36,6 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search, color: AppColors.textPrimary),
-          onPressed: onSearchPressed,
-        ),
-        IconButton(
           icon: Badge(
             label: Text('$cartItemCount'),
             isLabelVisible: cartItemCount > 0,

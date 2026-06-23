@@ -125,13 +125,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Text(
-                        user?.name ?? 'Guest User',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                        user?.email ?? 'guest@example.com',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -178,7 +177,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: _buildStatCard('${user?.points ?? 0}', 'Points'),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard('1', 'Registry')),
+                  Expanded(
+                    child: _buildStatCard(
+                      '${user?.registryCount ?? 0}',
+                      'Registry',
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -241,7 +245,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           iconBg: AppColors.badgeBlue,
                           iconColor: const Color(0xFF2B6CB0),
                           title: 'Nursery Registry',
-                          trailingText: '8 items',
+                          trailingText: '${user?.registryCount ?? 0} items',
                         ),
                         _divider(),
                         _settingsItem(
@@ -255,10 +259,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
-                  _settingsSupportItem(Icons.help_outline, 'Help Center'),
-                  _settingsSupportItem(Icons.shield_outlined, 'Privacy Policy'),
+                  _sectionTitle('Support'),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: Column(
+                      children: [
+                        _settingsSupportItem(
+                          Icons.help_outline,
+                          'Help Center',
+                          onTap: () {
+                            // TODO: Navigate to Help Center
+                          },
+                        ),
+                        _divider(),
+                        _settingsSupportItem(
+                          Icons.shield_outlined,
+                          'Privacy Policy',
+                          onTap: () {
+                            // TODO: Navigate to Privacy Policy
+                          },
+                        ),
+                        _divider(),
+                        _settingsSupportItem(
+                          Icons.info_outline,
+                          'About',
+                          trailingText: 'v1.0.0',
+                          onTap: () {
+                            // TODO: Show about dialog
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 30),
 
@@ -504,24 +541,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _settingsSupportItem(IconData icon, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: AppColors.textPrimary.withOpacity(0.8)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 15,
-                color: AppColors.textPrimary,
+  Widget _settingsSupportItem(IconData icon, String title, {String? trailingText, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: AppColors.textPrimary.withOpacity(0.8)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-          ),
-        ],
+            if (trailingText != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  trailingText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 14,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
       ),
     );
   }

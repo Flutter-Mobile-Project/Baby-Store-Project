@@ -6,6 +6,9 @@ class User {
   final String? avatar;
   final int points;
   final int ordersCount;
+  final int favoritesCount;
+  final int bookingsCount;
+  final int registryCount;
   final String? babyName;
   final String? babyBirthday;
 
@@ -17,6 +20,9 @@ class User {
     this.avatar,
     this.points = 0,
     this.ordersCount = 0,
+    this.favoritesCount = 0,
+    this.bookingsCount = 0,
+    this.registryCount = 0,
     this.babyName,
     this.babyBirthday,
   });
@@ -30,6 +36,9 @@ class User {
       avatar: data['avatar'],
       points: data['points'] ?? 0,
       ordersCount: data['ordersCount'] ?? 0,
+      favoritesCount: data['favoritesCount'] ?? 0,
+      bookingsCount: data['bookingsCount'] ?? 0,
+      registryCount: data['registryCount'] ?? 0,
       babyName: data['babyName'],
       babyBirthday: data['birthday'], // Using birthday field for baby info
     );
