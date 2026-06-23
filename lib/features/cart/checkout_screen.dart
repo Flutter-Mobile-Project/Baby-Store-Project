@@ -31,6 +31,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String selectedPayment = 'card';
   bool useBillingAddress = true;
   bool _isLoading = false;
+  bool _isPressed = false;
   bool _showSuccessOverlay = false;
   String _orderId = '';
 
@@ -52,6 +53,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     // No timer at start, only when ABA/Acleda selected?
     // Or maybe start when selected.
+
+    // ── Auto-format card number input ──────────────────────────
+    cardNumberController.addListener(_formatCardNumber);
+
+    // Auto-format expiry with slash
+    expiryController.addListener(_formatExpiry);
   }
 
   @override
@@ -64,6 +71,78 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     cvvController.dispose();
     _paymentTimer?.cancel();
     super.dispose();
+  }
+
+  // ── Auto-format card number: "1234 5678 9012" ─────────────────
+  void _formatCardNumber() {
+    final text = cardNumberController.text.replaceAll(' ', '');
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(text[i]);
+    }
+    final formatted = buffer.toString();
+    if (formatted.length > 14) {
+      // Max "1234 5678 9012" = 14 chars (12 digits + 2 spaces)
+      cardNumberController.text = formatted.substring(0, 14);
+      cardNumberController.selection = TextSelection.fromPosition(
+        TextPosition(offset: 14),
+      );
+    } else if (formatted != cardNumberController.text) {
+      cardNumberController.text = formatted;
+      cardNumberController.selection = TextSelection.fromPosition(
+        TextPosition(offset: formatted.length),
+      );
+    }
+  }
+
+  // ── Auto-format expiry: "01/26" or "12/2026" ─────────────────
+  void _formatExpiry() {
+    final raw = expiryController.text.replaceAll('/', '');
+
+    // Only allow digits
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits != raw) {
+      expiryController.text = digits;
+    }
+
+    if (digits.length >= 3) {
+      // Month: always pad to 2 digits
+      String month = digits.substring(0, 2);
+      final monthNum = int.tryParse(month) ?? 0;
+      if (monthNum > 12) {
+        month = '12'; // Clamp month to max 12
+      } else if (digits.length == 2 && monthNum == 0) {
+        // Don't allow "00" — let user continue typing "01" etc.
+      }
+
+      // Year: take remaining digits (2 or 4)
+      final yearRaw = digits.substring(2);
+      // Allow up to 4 digits for year (e.g., "26" or "2026")
+      final year = yearRaw.length > 4 ? yearRaw.substring(0, 4) : yearRaw;
+
+      final formatted = year.isEmpty ? month : '$month/$year';
+
+      if (formatted != expiryController.text) {
+        expiryController.text = formatted;
+        expiryController.selection = TextSelection.fromPosition(
+          TextPosition(offset: expiryController.text.length),
+        );
+      }
+    } else {
+      // For 1-2 digits: pad month with leading zero only if 2 digits
+      if (digits.length == 2) {
+        final monthNum = int.tryParse(digits) ?? 0;
+        if (monthNum > 12) {
+          expiryController.text = '12';
+          expiryController.selection = TextSelection.fromPosition(
+            TextPosition(offset: 2),
+          );
+        }
+      }
+    }
   }
 
   void _startPaymentTimer() {
@@ -120,9 +199,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     // Additional validations for Card
     if (selectedPayment == 'card') {
-      if (cardNumberController.text.isEmpty ||
-          expiryController.text.isEmpty ||
-          cvvController.text.isEmpty) {
+      final rawCardNumber = cardNumberController.text
+          .replaceAll(' ', '')
+          .trim();
+
+      if (rawCardNumber.length < 12) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please enter a valid 12-digit card number"),
+          ),
+        );
+        return;
+      }
+      if (expiryController.text.isEmpty || cvvController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Please fill in card details")),
         );
@@ -351,34 +440,57 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 30),
 
+              // ── Animated Complete Purchase button ──────────────
               GestureDetector(
-                onTap: _isLoading ? null : _handleCompletePurchase,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF556B7B),
-                    borderRadius: BorderRadius.circular(35),
-                  ),
-                  child: Center(
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                onTap: _isLoading
+                    ? null
+                    : () {
+                        setState(() {
+                          _isPressed = true;
+                        });
+                        Future.delayed(const Duration(milliseconds: 150), () {
+                          if (!mounted) return;
+                          setState(() {
+                            _isPressed = false;
+                          });
+                          _handleCompletePurchase();
+                        });
+                      },
+                child: AnimatedScale(
+                  scale: _isPressed ? 0.95 : 1.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: _isLoading
+                          ? const LinearGradient(
+                              colors: [Color(0xFF7A9E8E), Color(0xFF5B8A7A)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFF556B7B), Color(0xFF3D5363)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
                             ),
-                          )
-                        : const Text(
-                            "Complete Purchase",
-                            style: TextStyle(
-                              fontFamily: 'Nunito',
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      borderRadius: BorderRadius.circular(35),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _isLoading
+                              ? const Color(0xFF7A9E8E).withOpacity(0.4)
+                              : const Color(0xFF556B7B).withOpacity(0.4),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _isLoading
+                          ? _buildLoadingAnimation()
+                          : _buildPulseButton(),
+                    ),
                   ),
                 ),
               ),
@@ -389,72 +501,179 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         if (_showSuccessOverlay)
           Container(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withOpacity(0.6),
             child: Center(
-              child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 700),
-                tween: Tween(begin: 0, end: 1),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) {
-                  // Curve (easeOutBack) may overshoot >1. Clamp opacity to [0,1]
-                  final double clamped = value.clamp(0.0, 1.0).toDouble();
-                  return Transform.scale(
-                    scale: value,
-                    child: Opacity(opacity: clamped, child: child),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(30),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        height: 90,
-                        width: 90,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFDDEBE3),
-                        ),
-                        child: const Icon(
-                          Icons.check_circle,
-                          color: Color(0xFF7A9E8E),
-                          size: 60,
-                        ),
-                      ),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Animated checkmark circle ──────────────────
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.elasticOut,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: Container(
+                            height: 100,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF7A9E8E), Color(0xFF5B8A7A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF7A9E8E,
+                                  ).withOpacity(0.4),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              color: Colors.white,
+                              size: 60,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-                      const Text(
+                    // ── Animated title ─────────────────────────────
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 500),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Opacity(opacity: value, child: child);
+                      },
+                      child: const Text(
                         "Payment Successful!",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: AppColors.textPrimary,
                         ),
                       ),
+                    ),
 
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                      const Text(
-                        "Your order has been placed successfully.",
+                    // ── Animated subtitle ──────────────────────────
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 600),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 10 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "Your order has been placed successfully.\nWe'll start preparing it right away!",
                         textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          height: 1.5,
+                        ),
                       ),
+                    ),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      Text(
-                        "Order ID: $_orderId",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    // ── Animated order ID card ─────────────────────
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 700),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 15 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F5F2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.receipt_long_outlined,
+                              color: Color(0xFF5B8A7A),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              "Order #$_orderId",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Nunito',
+                                fontSize: 15,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
 
-                      const SizedBox(height: 25),
+                    const SizedBox(height: 28),
 
-                      SizedBox(
+                    // ── Animated button ────────────────────────────
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 20 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
@@ -476,15 +695,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
+                            elevation: 4,
+                            shadowColor: const Color(
+                              0xFF556B7B,
+                            ).withOpacity(0.4),
                           ),
-                          child: const Text(
-                            "Back to Home",
-                            style: TextStyle(color: Colors.white),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.home_outlined,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "Back to Home",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Nunito',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -496,6 +735,107 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(child: body),
+    );
+  }
+
+  Widget _buildLoadingAnimation() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 600),
+          tween: Tween(begin: 0.5, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 600),
+          tween: Tween(begin: 0.5, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 600),
+          tween: Tween(begin: 0.5, end: 1.0),
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 12),
+        const Text(
+          "Processing...",
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPulseButton() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 1200),
+      tween: Tween(begin: 0.96, end: 1.0),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text(
+                "Complete Purchase",
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

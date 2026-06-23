@@ -224,45 +224,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               ),
             ),
           ),
-
-          const SizedBox(height: 10),
-
-          // ── View cart ──────────────────────────────────────────
-          SizedBox(
-            width: double.infinity,
-            height: 45,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF5B6B7A)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                // Navigate to the CartScreen, passing current favorites
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CartScreen(
-                      cartItems: [],
-                      favorites: widget.favoriteItems,
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(
-                Icons.shopping_cart_outlined,
-                color: Color(0xFF5B6B7A),
-              ),
-              label: const Text(
-                'View Cart',
-                style: TextStyle(
-                  color: Color(0xFF5B6B7A),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -35,7 +35,7 @@ class PromotionsScreen extends StatelessWidget {
                 child: Container(
                   height: 60,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCEEFF),
+                    color: const Color(0xFF9DC8F0),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: const Center(
@@ -43,9 +43,9 @@ class PromotionsScreen extends StatelessWidget {
                       "My Coupons",
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.blueGrey,
+                        color: Color(0xFF2C5A8C),
                       ),
                     ),
                   ),
@@ -56,7 +56,7 @@ class PromotionsScreen extends StatelessWidget {
                 child: Container(
                   height: 60,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1EEE3),
+                    color: const Color(0xFFE3D9B6),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: const Center(
@@ -64,9 +64,9 @@ class PromotionsScreen extends StatelessWidget {
                       "Baby Registry",
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: Color(0xFF6B5B3E),
                       ),
                     ),
                   ),
@@ -84,6 +84,7 @@ class PromotionsScreen extends StatelessWidget {
             code: "WELCOME20",
             tag: "Free Shipping",
             icon: Icons.local_offer_outlined,
+            tagColor: const Color(0xFFD46A7A),
           ),
           const SizedBox(height: 18),
           _buildCouponCard(
@@ -93,6 +94,7 @@ class PromotionsScreen extends StatelessWidget {
             code: "WHEELS50",
             tag: "Limited Time",
             icon: Icons.card_giftcard_outlined,
+            tagColor: const Color(0xFFC27BA0),
           ),
           const SizedBox(height: 18),
           _buildCouponCard(
@@ -102,6 +104,7 @@ class PromotionsScreen extends StatelessWidget {
             code: "B3G1FREE",
             tag: "Free Shipping",
             icon: Icons.auto_awesome_outlined,
+            tagColor: const Color(0xFFD46A7A),
           ),
           const SizedBox(height: 30),
         ],
@@ -116,13 +119,14 @@ class PromotionsScreen extends StatelessWidget {
     required String code,
     required String tag,
     required IconData icon,
+    Color tagColor = const Color(0xFFD46A7A),
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Colors.grey.shade300, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +140,7 @@ class PromotionsScreen extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4E1EC),
+                  color: const Color(0xFFF0C8D8),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -144,12 +148,12 @@ class PromotionsScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF8B3A4A),
                   ),
                 ),
               ),
-              Icon(icon, color: Colors.blueGrey),
+              Icon(icon, color: tagColor, size: 22),
             ],
           ),
 
@@ -160,8 +164,8 @@ class PromotionsScreen extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Poppins',
               fontSize: 28,
-              fontWeight: FontWeight.w500,
-              color: Colors.blueGrey,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4A5D70),
             ),
           ),
 
@@ -172,7 +176,8 @@ class PromotionsScreen extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 15,
-              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF3D3D3D),
             ),
           ),
 
@@ -186,7 +191,7 @@ class PromotionsScreen extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1EEE3),
+                  color: const Color(0xFFE8E0C8),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Text(
@@ -195,12 +200,13 @@ class PromotionsScreen extends StatelessWidget {
                     fontFamily: 'Nunito',
                     letterSpacing: 2,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
+                    color: Color(0xFF4A5D70),
+                    fontSize: 15,
                   ),
                 ),
               ),
 
-              const Spacer(), // Push Apply button to the right
+              const Spacer(),
 
               GestureDetector(
                 onTap: () {
@@ -211,18 +217,30 @@ class PromotionsScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
-                    vertical: 10,
+                    vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5CFE1),
+                    color: const Color(0xFFD8B8D4),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text("Apply", style: TextStyle(fontFamily: 'Nunito')),
+                      Text(
+                        "Apply",
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4A3550),
+                          fontSize: 15,
+                        ),
+                      ),
                       SizedBox(width: 5),
-                      Icon(Icons.arrow_forward, size: 16),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: Color(0xFF4A3550),
+                      ),
                     ],
                   ),
                 ),
