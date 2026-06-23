@@ -15,7 +15,7 @@ class _TopBannerState extends State<TopBanner> {
   int _currentPage = 0;
   Timer? _timer;
 
-  // Here you can add as many banners as you want!
+ 
   // Just change the image paths to pictures you actually have in your assets.
   final List<Map<String, String>> _banners = [
     {
