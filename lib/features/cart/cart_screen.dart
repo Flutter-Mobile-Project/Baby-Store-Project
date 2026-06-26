@@ -131,6 +131,21 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  void _removeItem(Map<String, dynamic> item) {
+    setState(() {
+      cartItems.remove(item);
+      // Recalculate discount if coupon was applied
+      if (appliedCoupon != null) {
+        final coupon = _coupons[appliedCoupon!];
+        if (coupon != null) {
+          discountAmount = coupon['type'] == 'percentage'
+              ? subtotal * (coupon['value'] / 100)
+              : (coupon['value'] as int).toDouble();
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final body = cartItems.isEmpty
@@ -172,106 +187,124 @@ class _CartScreenState extends State<CartScreen> {
 
                 // ── Cart items ──────────────────────────────────
                 ...cartItems.map(
-                  (item) => Container(
-                    margin: const EdgeInsets.only(bottom: 18),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            item["image"],
-                            width: 70,
-                            height: 70,
-                            fit: BoxFit.cover,
-                          ),
+                  (item) => Stack(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 18),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(25),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item["title"],
-                                style: const TextStyle(
-                                  fontFamily: 'Nunito',
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                ),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                item["image"],
+                                width: 70,
+                                height: 70,
+                                fit: BoxFit.cover,
                               ),
-                              Text(
-                                "\$${item["price"]}",
-                                style: const TextStyle(
-                                  fontFamily: 'Nunito',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              if (item["color"] != null || item["size"] != null)
-                                Text(
-                                  'Color: ${item["color"] ?? ''}, Size: ${item["size"] ?? ''}'
-                                      .trim(),
-                                  style: const TextStyle(
-                                    fontFamily: 'Nunito',
-                                    color: Colors.black54,
-                                    fontSize: 11,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item["title"],
+                                    style: const TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // ── Qty stepper ───────────────────────
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.babyBlue,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () => setState(() {
-                                  if (item["qty"] > 1) item["qty"]--;
-                                }),
-                                child: const Icon(
-                                  Icons.remove,
-                                  size: 18,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: Text(
-                                  item["qty"].toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
+                                  Text(
+                                    "\$${item["price"]}",
+                                    style: const TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
-                                ),
+                                  if (item["color"] != null ||
+                                      item["size"] != null)
+                                    Text(
+                                      'Color: ${item["color"] ?? ''}, Size: ${item["size"] ?? ''}'
+                                          .trim(),
+                                      style: const TextStyle(
+                                        fontFamily: 'Nunito',
+                                        color: Colors.black54,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                ],
                               ),
-                              GestureDetector(
-                                onTap: () => setState(() => item["qty"]++),
-                                child: const Icon(
-                                  Icons.add,
-                                  size: 18,
-                                  color: AppColors.textPrimary,
-                                ),
+                            ),
+                            // ── Qty stepper ───────────────────────
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
                               ),
-                            ],
+                              decoration: BoxDecoration(
+                                color: AppColors.babyBlue,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => setState(() {
+                                      if (item["qty"] > 1) item["qty"]--;
+                                    }),
+                                    child: const Icon(
+                                      Icons.remove,
+                                      size: 18,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    child: Text(
+                                      item["qty"].toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => setState(() => item["qty"]++),
+                                    child: const Icon(
+                                      Icons.add,
+                                      size: 18,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // ── Cross icon top right ───────────────
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () => _removeItem(item),
+                          child: const Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.red,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -371,7 +404,6 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       GestureDetector(
-                        // ✅ Just switch tab — no _NavigationWrapper needed
                         onTap: () => widget.onNavigate?.call(tabPromotions),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -470,7 +502,6 @@ class _CartScreenState extends State<CartScreen> {
                 const SizedBox(height: 30),
 
                 // ── Checkout ────────────────────────────────────
-                // ── Checkout ────────────────────────────────────────────
                 GestureDetector(
                   onTap: _goToCheckout,
                   child: Container(
