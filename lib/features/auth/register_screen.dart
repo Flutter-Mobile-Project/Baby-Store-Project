@@ -1,0 +1,692 @@
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:baby_store_app/state/user_provider.dart';
+import 'package:baby_store_app/models/user.dart';
+import 'package:baby_store_app/services/auth_service.dart';
+
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
+    with TickerProviderStateMixin {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  String? _nameError;
+  String? _emailError;
+  String? _passwordError;
+
+  late AnimationController _fadeController;
+  late AnimationController _stepController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+  late Animation<double> _stepFade;
+  late Animation<Offset> _stepSlide;
+
+  // ── Color palette ──────────────────────────────────────────────
+  static const Color _sage = Color(0xFF7A9E8E);
+  static const Color _darkSage = Color(0xFF3D6255);
+  static const Color _cream = Color(0xFFF7F3EC);
+  static const Color _softWhite = Color(0xFFFBF9F6);
+  static const Color _textDark = Color(0xFF2C2C2C);
+  static const Color _textMid = Color(0xFF6B6B6B);
+  static const Color _textLight = Color(0xFFAAAAAA);
+  static const Color _errorRed = Color(0xFFE05A5A);
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _stepController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
+    _stepFade = CurvedAnimation(parent: _stepController, curve: Curves.easeOut);
+    _stepSlide = Tween<Offset>(
+      begin: const Offset(0.05, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _stepController, curve: Curves.easeOut));
+
+    _fadeController.forward();
+    _stepController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _stepController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // ── Validators ─────────────────────────────────────────────────
+  String? _validateName(String v) {
+    if (v.trim().isEmpty) return 'Full name is required';
+    if (v.trim().length < 2) return 'At least 2 characters';
+    return null;
+  }
+
+  String? _validateEmail(String v) {
+    if (v.trim().isEmpty) return 'Email is required';
+    final reg = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
+    if (!reg.hasMatch(v.trim())) return 'Enter a valid email';
+    return null;
+  }
+
+  String? _validatePassword(String v) {
+    if (v.isEmpty) return 'Password is required';
+    if (v.length < 8) return 'Min. 8 characters (${v.length}/8)';
+    return null;
+  }
+
+  void _onNameChanged(String v) {
+    if (_nameError != null) setState(() => _nameError = _validateName(v));
+  }
+
+  void _onEmailChanged(String v) {
+    if (_emailError != null) setState(() => _emailError = _validateEmail(v));
+  }
+
+  void _onPasswordChanged(String v) {
+    setState(() => _passwordError = _validatePassword(v));
+  }
+
+  void _register() async {
+    setState(() {
+      _nameError = _validateName(_nameController.text);
+      _emailError = _validateEmail(_emailController.text);
+      _passwordError = _validatePassword(_passwordController.text);
+    });
+
+    if (_nameError != null || _emailError != null || _passwordError != null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Create account in Firebase Auth
+      auth.UserCredential result = await auth.FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+      auth.User? firebaseUser = result.user;
+
+      if (firebaseUser != null) {
+        // Save extra info in Firestore using AuthService helper
+        await AuthService.saveUserData(
+          uid: firebaseUser.uid,
+          name: _nameController.text.trim(),
+          email: firebaseUser.email!,
+        );
+
+        // Fetch full profile
+        final userProfile = await AuthService.getUserProfile(firebaseUser.uid);
+
+        // Save to local storage for session management
+        await AuthService.register(
+          name: _nameController.text.trim(),
+          email: firebaseUser.email!,
+        );
+
+        // Update Riverpod state
+        ref.read(userProvider.notifier).state = userProfile;
+
+        if (!mounted) return;
+        if (Navigator.canPop(context)) {
+          Navigator.of(context, rootNavigator: true).pop(true);
+        } else {
+          Navigator.pushReplacementNamed(context, '/');
+        }
+      }
+    } catch (e) {
+      print("Registration error: $e");
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  int get _passwordStrength {
+    final p = _passwordController.text;
+    int s = 0;
+    if (p.length >= 8) s++;
+    if (p.contains(RegExp(r'[A-Z]'))) s++;
+    if (p.contains(RegExp(r'[0-9]'))) s++;
+    if (p.contains(RegExp(r'[!@#\$%^&*]'))) s++;
+    return s;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _cream,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SlideTransition(
+            position: _slideAnim,
+            child: Column(
+              children: [
+                // ── Top bar ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          if (Navigator.canPop(context)) {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pop(false);
+                          } else {
+                            Navigator.pushReplacementNamed(context, '/');
+                          }
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            size: 16,
+                            color: _textDark,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 28),
+
+                        // ── Brand mark ────────────────────────
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: _sage.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.child_care_rounded,
+                                  size: 28,
+                                  color: _sage,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Create Account',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textDark,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Welcome to TinyTots — where every\nlittle milestone matters.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 13.5,
+                                  color: _textLight,
+                                  height: 1.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // ── Content ──────────────────────
+                        FadeTransition(
+                          opacity: _stepFade,
+                          child: SlideTransition(
+                            position: _stepSlide,
+                            child: _buildForm(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildField(
+          label: 'Full Name',
+          hint: 'e.g. Sarah Jenkins',
+          controller: _nameController,
+          icon: Icons.person_outline_rounded,
+          error: _nameError,
+          onChanged: _onNameChanged,
+        ),
+        const SizedBox(height: 12),
+        _buildField(
+          label: 'Email Address',
+          hint: 'sarah@example.com',
+          controller: _emailController,
+          icon: Icons.alternate_email_rounded,
+          error: _emailError,
+          keyboardType: TextInputType.emailAddress,
+          onChanged: _onEmailChanged,
+        ),
+        const SizedBox(height: 12),
+        _buildField(
+          label: 'Password',
+          hint: 'Min. 8 characters',
+          controller: _passwordController,
+          icon: Icons.lock_outline_rounded,
+          error: _passwordError,
+          obscure: _obscurePassword,
+          onChanged: _onPasswordChanged,
+          suffix: GestureDetector(
+            onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 18,
+                color: _textLight,
+              ),
+            ),
+          ),
+        ),
+
+        if (_passwordController.text.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _buildStrengthBar(),
+        ],
+
+        const SizedBox(height: 24),
+
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Text(
+                'OR CONTINUE WITH',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade400,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSocialButton(
+                label: 'Google',
+                icon: Icons.g_mobiledata_rounded,
+                iconColor: const Color(0xFFDB4437),
+                onTap: () async {
+                  final profile = await AuthService.signInWithGoogle();
+                  if (profile != null) {
+                    ref.read(userProvider.notifier).state = profile;
+                    if (!mounted) return;
+                    if (Navigator.canPop(context)) {
+                      Navigator.of(context, rootNavigator: true).pop(true);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSocialButton(
+                label: 'Apple',
+                icon: Icons.apple_rounded,
+                iconColor: Colors.black87,
+                onTap: () async {},
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        _buildPrimaryButton(
+          label: 'Create Account',
+          icon: Icons.person_add_alt_1_rounded,
+          onTap: _isLoading ? null : _register,
+          isLoading: _isLoading,
+        ),
+
+        const SizedBox(height: 16),
+
+        Center(
+          child: GestureDetector(
+            onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+            child: RichText(
+              text: const TextSpan(
+                text: 'Already have an account?  ',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 13,
+                  color: _textLight,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Log in',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 13,
+                      color: _darkSage,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStrengthBar() {
+    final strength = _passwordStrength;
+    final labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+    final colors = [
+      Colors.red.shade300,
+      Colors.orange.shade300,
+      Colors.amber.shade500,
+      Colors.lightGreen.shade500,
+      Colors.green.shade500,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: List.generate(
+            4,
+            (i) => Expanded(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.only(right: 4),
+                height: 3,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(2),
+                  color: i < strength ? colors[strength] : Colors.grey.shade200,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          labels[strength],
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: colors[strength],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required String label,
+    required IconData icon,
+    VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          color: onTap == null ? _darkSage.withOpacity(0.5) : _darkSage,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: onTap == null
+              ? []
+              : [
+                  BoxShadow(
+                    color: _darkSage.withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(icon, color: Colors.white, size: 18),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required IconData icon,
+    String? error,
+    bool obscure = false,
+    TextInputType? keyboardType,
+    Widget? suffix,
+    void Function(String)? onChanged,
+  }) {
+    final hasError = error != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: _textMid,
+          ),
+        ),
+        const SizedBox(height: 6),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: hasError ? Colors.red.shade50 : _softWhite,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: hasError
+                  ? _errorRed.withOpacity(0.4)
+                  : Colors.grey.shade200,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: hasError ? _errorRed : _textLight,
+                ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  obscureText: obscure,
+                  keyboardType: keyboardType,
+                  onChanged: onChanged,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 14,
+                    color: _textDark,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 14,
+                      color: _textLight,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              if (suffix != null) suffix,
+            ],
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: hasError
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 5, left: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        size: 12,
+                        color: _errorRed,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        error,
+                        style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 11,
+                          color: _errorRed,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialButton({
+    required String label,
+    required IconData icon,
+    required Color iconColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: _softWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _textDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

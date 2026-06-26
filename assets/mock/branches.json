@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "name": "TinyTots Blossom Valley",
+    "address": "123 Nursery Lane, Green Pastures, CA 90210",
+    "latitude": 11.5564,
+    "longitude": 104.9282,
+    "rating": 4.9,
+    "stockText": "In Stock: Organic Cotton Sleepers",
+    "image": "assets/images/nearby/store1.jpg"
+  },
+  {
+    "id": "2",
+    "name": "Baby Haven Central",
+    "address": "456 Downtown Street",
+    "latitude": 11.5650,
+    "longitude": 104.9210,
+    "rating": 4.7,
+    "stockText": "Limited Stock Available",
+    "image": "assets/images/nearby/store2.jpg"
+  },
+  {
+    "id": "3",
+    "name": "Little Sprouts Boutique",
+    "address": "789 Suburbia Ave",
+    "latitude": 11.5500,
+    "longitude": 104.9300,
+    "rating": 4.8,
+    "stockText": "In Stock: Eco-Friendly Diapers",
+    "image": "assets/images/nearby/store3.jpg"
+  }
+]
